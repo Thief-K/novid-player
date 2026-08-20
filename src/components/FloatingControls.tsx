@@ -20,7 +20,7 @@ import { SpeedPanel } from "./SpeedPanel";
 import { TrackPanel } from "./TrackPanel";
 import { VideoAdjustPanel } from "./VideoAdjustPanel";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { isTauri } from "../services/mpvService";
+import { isTauri, mpvService } from "../services/mpvService";
 
 export const FloatingControls: React.FC = () => {
   const {
@@ -51,7 +51,7 @@ export const FloatingControls: React.FC = () => {
     if (!isTauri()) return;
     const win = getCurrentWindow();
     const checkFullscreen = async () => {
-      setIsFullscreen(await win.isFullscreen());
+      setIsFullscreen(await mpvService.isFullscreen());
     };
     checkFullscreen();
 
@@ -65,12 +65,8 @@ export const FloatingControls: React.FC = () => {
   }, []);
 
   const handleToggleFullscreen = async () => {
-    if (isTauri()) {
-      const win = getCurrentWindow();
-      const current = await win.isFullscreen();
-      await win.setFullscreen(!current);
-      setIsFullscreen(!current);
-    }
+    const next = await mpvService.toggleFullscreen();
+    setIsFullscreen(next);
   };
 
   const formatTime = (seconds: number): string => {

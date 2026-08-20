@@ -166,6 +166,20 @@ export const mpvService = {
     return false;
   },
 
+  async toggleFullscreen(): Promise<boolean> {
+    if (isTauri()) {
+      return await invoke<boolean>("toggle_window_fullscreen");
+    }
+    return false;
+  },
+
+  async isFullscreen(): Promise<boolean> {
+    if (isTauri()) {
+      return await invoke<boolean>("is_window_fullscreen");
+    }
+    return false;
+  },
+
   async minimize(): Promise<void> {
     if (isTauri()) {
       await invoke("minimize_window");

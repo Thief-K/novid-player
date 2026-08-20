@@ -28,12 +28,18 @@ impl MpvManager {
     pub fn find_mpv_binary(&self, app_handle: &AppHandle) -> Option<PathBuf> {
         let mut candidates = Vec::new();
 
-        // 1. Check relative to current executable dir
+        // 1. Tauri bundled resource directory (for packaged installer/portable releases)
+        if let Ok(res_dir) = app_handle.path().resource_dir() {
+            candidates.push(res_dir.join("binaries").join("mpv.exe"));
+            candidates.push(res_dir.join("mpv.exe"));
+        }
+
+        // 2. Relative to current executable (portable builds or target/debug)
         if let Ok(current_exe) = std::env::current_exe() {
             if let Some(parent) = current_exe.parent() {
                 candidates.push(parent.join("binaries").join("mpv.exe"));
                 candidates.push(parent.join("mpv.exe"));
-                // In dev mode: target/debug/../..
+                // In local dev mode: target/debug/../../src-tauri/binaries/mpv.exe
                 if let Some(target_dir) = parent.parent() {
                     if let Some(tauri_dir) = target_dir.parent() {
                         candidates.push(tauri_dir.join("binaries").join("mpv.exe"));
@@ -42,20 +48,9 @@ impl MpvManager {
             }
         }
 
-        // 2. Tauri resource directory
-        if let Ok(res_dir) = app_handle.path().resource_dir() {
-            candidates.push(res_dir.join("binaries").join("mpv.exe"));
-            candidates.push(res_dir.join("mpv.exe"));
-        }
-
-        // 3. Current working directory & common Windows drive locations
+        // 3. Project root relative paths during local development
         candidates.push(PathBuf::from("src-tauri/binaries/mpv.exe"));
         candidates.push(PathBuf::from("binaries/mpv.exe"));
-        candidates.push(PathBuf::from("mpv.exe"));
-        candidates.push(PathBuf::from(r"D:\mpv\mpv.exe"));
-        candidates.push(PathBuf::from(r"C:\mpv\mpv.exe"));
-        candidates.push(PathBuf::from(r"C:\Program Files\mpv\mpv.exe"));
-        candidates.push(PathBuf::from(r"C:\Program Files (x86)\mpv\mpv.exe"));
 
         for path in &candidates {
             if path.exists() {
@@ -64,7 +59,7 @@ impl MpvManager {
             }
         }
 
-        // 4. Check system PATH
+        // 4. System PATH fallback
         if let Some(paths) = std::env::var_os("PATH") {
             for dir in std::env::split_paths(&paths) {
                 let p = dir.join("mpv.exe");
@@ -75,7 +70,7 @@ impl MpvManager {
             }
         }
 
-        log::warn!("MPV executable not found in searched locations: {:?}", candidates);
+        log::warn!("MPV binary not found in standard locations: {:?}", candidates);
         None
     }
 
@@ -109,8 +104,13 @@ impl MpvManager {
             .arg("--hwdec=auto-safe")
             .arg("--vo=gpu")
             .arg("--gpu-api=d3d11")
-            .arg("--d3d11-flip=no")
+            .arg("--d3d11-exclusive-fs=no")
             .arg("--force-window=yes")
+            .arg("--border=no")
+            .arg("--title=")
+            .arg("--window-dragging=no")
+            .arg("--snap-window=no")
+            .arg("--cursor-autohide=no")
             .arg("--terminal=no")
             .arg("--msg-level=all=warn");
 

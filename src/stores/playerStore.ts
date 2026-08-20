@@ -28,6 +28,7 @@ interface PlayerState {
   muted: boolean;
   speed: number;
   hwdec: string;
+  hwdecCurrent: string;
   tracks: TrackInfo[];
   selectedAudioTrack: number | string | null;
   selectedSubTrack: number | string | null;
@@ -84,6 +85,7 @@ interface PlayerState {
   setAspectRatio: (ratio: string) => Promise<void>;
   frameStep: (forward: boolean) => Promise<void>;
   takeScreenshot: (includeSubs?: boolean) => Promise<void>;
+  setHwdec: (mode: string) => Promise<void>;
 
   addToast: (
     title: string,
@@ -107,7 +109,8 @@ export const usePlayerStore = create<PlayerState>()(
       volume: 100,
       muted: false,
       speed: 1.0,
-      hwdec: "auto",
+      hwdec: "auto-safe",
+      hwdecCurrent: "auto",
       tracks: [],
       selectedAudioTrack: null,
       selectedSubTrack: null,
@@ -399,6 +402,40 @@ export const usePlayerStore = create<PlayerState>()(
         get().addToast("截图已保存", "已保存至 Pictures/Screenshots", "success");
       },
 
+      setHwdec: async (mode: string) => {
+        if (mode === "no") {
+          set({ hwdec: "no", hwdecCurrent: "no" });
+          await mpvService.sendRawCommand(["set_property", "hwdec", "no"]);
+          get().addToast("解码模式", "已切换为纯 CPU 软件解码", "info");
+          return;
+        }
+
+        // Apply requested hardware decode mode to MPV engine
+        await mpvService.sendRawCommand(["set_property", "hwdec", mode]);
+
+        // If a video is currently loaded, verify whether hardware decoding actually succeeded
+        if (get().currentPath) {
+          setTimeout(() => {
+            const current = get().hwdecCurrent;
+            if (current === "no") {
+              // Failed to activate (e.g. non-NVIDIA GPU or unsupported codec)
+              set({ hwdec: "no" });
+              get().addToast(
+                "硬件加速未生效",
+                `设备或视频不支持 ${mode} 硬解，已自动回退为软件解码`,
+                "warning"
+              );
+            } else {
+              set({ hwdec: mode });
+              get().addToast("硬件加速已启用", `已成功激活硬件解码 (${current})`, "success");
+            }
+          }, 300);
+        } else {
+          set({ hwdec: mode });
+          get().addToast("硬件加速模式", `已设置为 ${mode}（将在播放时生效）`, "info");
+        }
+      },
+
       addToast: (title, description, type = "info") => {
         const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
         const newToast: ToastMessage = { id, title, description, type, duration: 2500 };
@@ -467,7 +504,7 @@ export const usePlayerStore = create<PlayerState>()(
               }
               break;
             case "hwdec-current":
-              if (typeof val === "string") set({ hwdec: val });
+              if (typeof val === "string") set({ hwdecCurrent: val });
               break;
             case "sub-delay":
               if (typeof val === "number") set({ subDelay: val });
@@ -504,6 +541,7 @@ export const usePlayerStore = create<PlayerState>()(
       partialize: (state) => ({
         volume: state.volume,
         muted: state.muted,
+        hwdec: state.hwdec,
         history: state.history,
         playlist: state.playlist,
       }),

@@ -1,16 +1,15 @@
 import React from "react";
 import { usePlayerStore } from "../stores/playerStore";
-import { mpvService } from "../services/mpvService";
 import { X, Cpu, Keyboard, Info } from "lucide-react";
 
 export const SettingsModal: React.FC = () => {
-  const { isSettingsOpen, toggleSettings, hwdec, addToast } = usePlayerStore();
+  const { isSettingsOpen, toggleSettings, hwdec, hwdecCurrent, setHwdec, currentPath } =
+    usePlayerStore();
 
   if (!isSettingsOpen) return null;
 
   const handleHwdecChange = async (mode: string) => {
-    await mpvService.sendRawCommand(["set_property", "hwdec", mode]);
-    addToast("硬件加速模式", `已切换至 ${mode}`, "info");
+    await setHwdec(mode);
   };
 
   const shortcuts = [
@@ -26,7 +25,7 @@ export const SettingsModal: React.FC = () => {
     { key: "V", desc: "循环切换音轨" },
     { key: "S", desc: "截取高清画面" },
     { key: ". / ,", desc: "逐帧前进 / 后退" },
-    { key: "L", desc: "播放列表抽屉" },
+    { key: "L", desc: "播放列表" },
     { key: "Ctrl + O", desc: "打开本地视频" },
   ];
 
@@ -55,9 +54,19 @@ export const SettingsModal: React.FC = () => {
         <div className="flex-1 overflow-y-auto space-y-4 pr-0.5">
           {/* Hardware Acceleration Settings */}
           <div>
-            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-2">
-              <Cpu className="w-3.5 h-3.5 text-sky-400" />
-              <span>硬件解码与渲染</span>
+            <div className="flex items-center justify-between text-xs font-medium text-slate-300 mb-2">
+              <div className="flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-sky-400" />
+                <span>硬件解码与渲染</span>
+              </div>
+              {currentPath && hwdecCurrent && (
+                <span className="text-[10px] text-slate-400 font-mono">
+                  当前生效:{" "}
+                  <span className={hwdecCurrent === "no" ? "text-amber-400" : "text-emerald-400"}>
+                    {hwdecCurrent === "no" ? "软解 (CPU)" : hwdecCurrent}
+                  </span>
+                </span>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {[
@@ -65,20 +74,24 @@ export const SettingsModal: React.FC = () => {
                 { id: "d3d11va", name: "D3D11VA", desc: "Windows 原生硬解" },
                 { id: "nvdec", name: "NVDEC", desc: "NVIDIA 显卡专用" },
                 { id: "no", name: "软件解码", desc: "纯 CPU 解码" },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleHwdecChange(item.id)}
-                  className={`p-2 rounded-xl text-left border transition-all ${
-                    hwdec === item.id || (hwdec === "auto" && item.id === "auto-safe")
-                      ? "bg-sky-500/20 border-sky-500/50 text-sky-300 shadow-xs"
-                      : "bg-slate-800/40 border-slate-700/40 text-slate-300 hover:bg-slate-800/80"
-                  }`}
-                >
-                  <div className="text-xs font-medium">{item.name}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">{item.desc}</div>
-                </button>
-              ))}
+              ].map((item) => {
+                const isSelected =
+                  hwdec === item.id || (hwdec === "auto" && item.id === "auto-safe");
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleHwdecChange(item.id)}
+                    className={`p-2 rounded-xl text-left border transition-all ${
+                      isSelected
+                        ? "bg-sky-500/20 border-sky-500/50 text-sky-300 shadow-xs"
+                        : "bg-slate-800/40 border-slate-700/40 text-slate-300 hover:bg-slate-800/80"
+                    }`}
+                  >
+                    <div className="text-xs font-medium">{item.name}</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">{item.desc}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

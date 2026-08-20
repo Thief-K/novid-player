@@ -7,7 +7,7 @@ import { NovidLogo } from "./NovidLogo";
 import { HistoryModal } from "./HistoryModal";
 
 export const TitleBar: React.FC = () => {
-  const { mediaTitle, currentPath, hwdec, isPinned, isControlVisible, history, toggleSettings } =
+  const { mediaTitle, currentPath, isPinned, isControlVisible, history, toggleSettings } =
     usePlayerStore();
   const [isMaximized, setIsMaximized] = useState(false);
   const [pinned, setPinned] = useState(isPinned);
@@ -51,29 +51,30 @@ export const TitleBar: React.FC = () => {
   };
 
   const handleMouseDown = async (e: React.MouseEvent) => {
-    if (e.button === 0 && !(e.target as HTMLElement).closest("button, input, a")) {
-      await mpvService.startDragging();
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest("button, input, a")) {
+      return;
     }
-  };
 
-  const handleDoubleClick = async (e: React.MouseEvent) => {
-    if (e.button === 0 && !(e.target as HTMLElement).closest("button, input, a")) {
+    if (e.detail === 2) {
       await handleMaximize();
+    } else if (e.detail === 1) {
+      if (isTauri()) {
+        getCurrentWindow().startDragging();
+      }
     }
   };
 
   return (
     <>
       <header
-        data-tauri-drag-region
         onMouseDown={handleMouseDown}
-        onDoubleClick={handleDoubleClick}
         className={`fixed top-0 left-0 right-0 h-10 z-50 flex items-center justify-between px-3 select-none transition-opacity duration-300 ${
           isControlVisible || !currentPath ? "opacity-100" : "opacity-0 pointer-events-none"
         } bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-xs cursor-default`}
       >
         {/* Left: App Logo & Current File Title */}
-        <div className="flex items-center gap-2 max-w-[65%] overflow-hidden" data-tauri-drag-region>
+        <div className="flex items-center gap-2 max-w-[65%] overflow-hidden">
           <NovidLogo size={18} />
           <span className="text-xs font-semibold tracking-wide text-slate-300">NovidPlayer</span>
           {currentPath && (
@@ -83,11 +84,6 @@ export const TitleBar: React.FC = () => {
                 {mediaTitle}
               </span>
             </>
-          )}
-          {hwdec && hwdec !== "no" && currentPath && (
-            <span className="px-1.5 py-0.5 text-[10px] font-mono rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 ml-1">
-              HW:{hwdec}
-            </span>
           )}
         </div>
 

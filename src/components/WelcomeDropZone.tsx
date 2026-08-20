@@ -2,16 +2,33 @@ import React from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen } from "lucide-react";
 import { usePlayerStore } from "../stores/playerStore";
-import { isTauri, mpvService } from "../services/mpvService";
+import { isTauri } from "../services/mpvService";
 import { NovidLogo } from "./NovidLogo";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export const WelcomeDropZone: React.FC = () => {
   const { loadAndPlay } = usePlayerStore();
 
   const handleDragMouseDown = async (e: React.MouseEvent) => {
-    // If clicking on interactive buttons, don't drag
-    if (e.button === 0 && !(e.target as HTMLElement).closest("button, a")) {
-      await mpvService.startDragging();
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest("button, a, input")) {
+      return;
+    }
+
+    if (e.detail === 2) {
+      if (isTauri()) {
+        const win = getCurrentWindow();
+        const isMax = await win.isMaximized();
+        if (isMax) {
+          await win.unmaximize();
+        } else {
+          await win.maximize();
+        }
+      }
+    } else if (e.detail === 1) {
+      if (isTauri()) {
+        getCurrentWindow().startDragging();
+      }
     }
   };
 
@@ -55,7 +72,6 @@ export const WelcomeDropZone: React.FC = () => {
 
   return (
     <div
-      data-tauri-drag-region
       onMouseDown={handleDragMouseDown}
       className="fixed inset-0 flex flex-col items-center justify-center bg-[#0b0e14]/90 backdrop-blur-md z-20 select-none overflow-hidden"
     >

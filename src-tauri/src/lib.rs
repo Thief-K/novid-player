@@ -39,6 +39,8 @@ pub fn run() {
             commands::check_mpv_status,
             commands::start_window_dragging,
             commands::toggle_window_maximize,
+            commands::toggle_window_fullscreen,
+            commands::is_window_fullscreen,
             commands::minimize_window,
             commands::close_window,
             commands::set_window_always_on_top,

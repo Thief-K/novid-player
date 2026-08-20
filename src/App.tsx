@@ -145,7 +145,7 @@ export const App: React.FC = () => {
   // Video viewport click & double click
   const handleViewportClick = (e: React.MouseEvent) => {
     // If clicking on UI overlay elements, ignore
-    if ((e.target as HTMLElement).closest("button, input, [data-tauri-drag-region]")) {
+    if ((e.target as HTMLElement).closest("button, input, header")) {
       return;
     }
 
@@ -153,12 +153,7 @@ export const App: React.FC = () => {
       // Double click -> Toggle Fullscreen
       clearTimeout(clickTimerRef.current);
       clickTimerRef.current = null;
-      if (isTauri()) {
-        const win = getCurrentWindow();
-        win.isFullscreen().then((isFull) => {
-          win.setFullscreen(!isFull);
-        });
-      }
+      mpvService.toggleFullscreen();
     } else {
       // Single click -> Toggle Play/Pause after short debounce
       clickTimerRef.current = setTimeout(() => {

@@ -297,6 +297,14 @@ pub async fn check_mpv_status(
     Ok(manager.find_mpv_binary(&app).is_some())
 }
 
+use parking_lot::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use tauri::{PhysicalPosition, PhysicalSize, Position, Size};
+
+static IS_SEAMLESS_FULLSCREEN: AtomicBool = AtomicBool::new(false);
+static SAVED_WINDOW_RECT: Mutex<Option<(PhysicalPosition<i32>, PhysicalSize<u32>)>> =
+    Mutex::new(None);
+
 #[tauri::command]
 pub async fn start_window_dragging(window: tauri::Window) -> Result<(), String> {
     window.start_dragging().map_err(|e| e.to_string())
@@ -304,14 +312,73 @@ pub async fn start_window_dragging(window: tauri::Window) -> Result<(), String> 
 
 #[tauri::command]
 pub async fn toggle_window_maximize(window: tauri::Window) -> Result<bool, String> {
+    // If in fullscreen, exit fullscreen first
+    if IS_SEAMLESS_FULLSCREEN.load(Ordering::SeqCst) {
+        IS_SEAMLESS_FULLSCREEN.store(false, Ordering::SeqCst);
+    }
+
     let is_max = window.is_maximized().map_err(|e| e.to_string())?;
-    if is_max {
+    let next = if is_max {
         window.unmaximize().map_err(|e| e.to_string())?;
-        Ok(false)
+        false
     } else {
         window.maximize().map_err(|e| e.to_string())?;
-        Ok(true)
+        true
+    };
+
+    Ok(next)
+}
+
+#[tauri::command]
+pub async fn toggle_window_fullscreen(window: tauri::Window) -> Result<bool, String> {
+    let is_fs = IS_SEAMLESS_FULLSCREEN.load(Ordering::SeqCst);
+    let next_fs = !is_fs;
+
+    if next_fs {
+        // 1. Save current position and size
+        if let (Ok(pos), Ok(size)) = (window.outer_position(), window.outer_size()) {
+            let mut lock = SAVED_WINDOW_RECT.lock();
+            *lock = Some((pos, size));
+        }
+
+        // 2. Unmaximize if currently maximized
+        if window.is_maximized().unwrap_or(false) {
+            let _ = window.unmaximize();
+        }
+
+        // 3. Stretch to monitor bounds seamlessly without changing GWL_STYLE (prevents Windows DWM non-client frame flash!)
+        if let Ok(Some(monitor)) = window.current_monitor() {
+            let mon_pos = *monitor.position();
+            let mon_size = *monitor.size();
+
+            let _ = window.set_position(Position::Physical(mon_pos));
+            let _ = window.set_size(Size::Physical(mon_size));
+            IS_SEAMLESS_FULLSCREEN.store(true, Ordering::SeqCst);
+        }
+    } else {
+        // Restore previous position and size seamlessly
+        let saved = {
+            let lock = SAVED_WINDOW_RECT.lock();
+            *lock
+        };
+
+        if let Some((pos, size)) = saved {
+            let _ = window.set_size(Size::Physical(size));
+            let _ = window.set_position(Position::Physical(pos));
+        } else {
+            let _ = window.set_size(Size::Physical(PhysicalSize::new(1080, 680)));
+            let _ = window.center();
+        }
+
+        IS_SEAMLESS_FULLSCREEN.store(false, Ordering::SeqCst);
     }
+
+    Ok(next_fs)
+}
+
+#[tauri::command]
+pub fn is_window_fullscreen() -> bool {
+    IS_SEAMLESS_FULLSCREEN.load(Ordering::SeqCst)
 }
 
 #[tauri::command]

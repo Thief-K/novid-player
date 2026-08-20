@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { usePlayerStore } from "../stores/playerStore";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
-import { isTauri } from "../services/mpvService";
+import { isTauri, mpvService } from "../services/mpvService";
 
 export function useKeyboardShortcuts() {
   const store = usePlayerStore();
@@ -88,11 +88,7 @@ export function useKeyboardShortcuts() {
 
         case "KeyF":
           e.preventDefault();
-          if (isTauri()) {
-            const win = getCurrentWindow();
-            const isFull = await win.isFullscreen();
-            await win.setFullscreen(!isFull);
-          }
+          await mpvService.toggleFullscreen();
           break;
 
         case "Escape":
@@ -112,7 +108,7 @@ export function useKeyboardShortcuts() {
           } else if (isTauri()) {
             const win = getCurrentWindow();
             if (await win.isFullscreen()) {
-              await win.setFullscreen(false);
+              await mpvService.toggleFullscreen();
             }
           }
           break;
