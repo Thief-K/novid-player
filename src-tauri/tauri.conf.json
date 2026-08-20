@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "NovaPlayer",
+  "productName": "NovidPlayer",
   "version": "1.0.0",
-  "identifier": "com.novaplayer.app",
+  "identifier": "com.novidplayer.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "NovaPlayer",
+        "title": "NovidPlayer",
         "width": 1080,
         "height": 680,
         "minWidth": 640,

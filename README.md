@@ -1,7 +1,7 @@
-# 🎬 NovaPlayer - 现代化 Windows 11 MPV 极简视频播放器
+# 🎬 NovidPlayer - 现代化 Windows 11 MPV 极简视频播放器
 
-NovaPlayer 是一款专为 Windows 11 打造的高颜值、极简、现代化本地视频播放器。
-前端采用 **React 19 + Vite + Tailwind CSS + Lucide Icons + Framer Motion** 构建沉浸式流媒体风格 UI，后端基于 **Tauri v2 (Rust)** 管理 **MPV 硬件加速解码内核**，通过 **Windows 命名管道 (`\\.\pipe\mpvsocket`)** 实现毫秒级双向 JSON-IPC 通信，将视频画面直接输出渲染到应用原生窗口中。
+NovidPlayer 是一款专为 Windows 11 打造的高颜值、极简、现代化本地视频播放器。
+前端采用 **React 19 + Vite + Tailwind CSS + Lucide Icons + Framer Motion** 构建沉浸式流媒体风格 UI，后端基于 **Tauri v2 (Rust)** 管理 **MPV 硬件加速解码内核**，通过 **Windows 命名管道 (`\\.\pipe\mpvsocket_novidplayer_<pid>`)** 实现毫秒级双向 JSON-IPC 通信，将视频画面直接输出渲染到应用原生窗口中。
 
 ---
 
@@ -23,8 +23,8 @@ NovaPlayer 是一款专为 Windows 11 打造的高颜值、极简、现代化本
   - **倍速微调**：0.5x, 0.75x, 1.0x, 1.25x, 1.5x, 2.0x, 3.0x 预设与 0.25x~4.0x 滑块微调。
   - **音轨与字幕管理**：内置音轨与字幕切换、拖拽/选择加载外挂字幕（`.srt, .ass, .vtt`）、字幕与音频延迟毫秒级校准（±0.1s）。
   - **画面色彩与比例**：亮度、对比度、饱和度、伽马值调节；强制 16:9 / 4:3 / 21:9 / 1:1 / 原始比例。
-  - **右侧抽屉式播放列表**：支持批量拖入、拖拽重排、自动连播下一集、历史播放进度记忆。
-  - **快捷截图**：支持一键捕获当前高清画面（可选是否包含字幕）。
+  - **浮动式播放列表**：支持批量拖入、拖拽重排、自动连播下一集、历史播放进度记忆。
+  - **快捷截图**：支持一键捕获当前高清画面至 `Pictures/Screenshots`。
 
 ---
 
@@ -45,7 +45,7 @@ NovaPlayer 是一款专为 Windows 11 打造的高颜值、极简、现代化本
 | **V**             | 快速循环切换音轨           |
 | **S**             | 高清截取当前画面           |
 | **. / ,**         | 逐帧前进 / 逐帧后退        |
-| **L**             | 打开 / 收起右侧播放列表    |
+| **L**             | 打开 / 收起播放列表        |
 | **Ctrl + O**      | 弹出选择本地媒体文件对话框 |
 
 ---
@@ -53,7 +53,7 @@ NovaPlayer 是一款专为 Windows 11 打造的高颜值、极简、现代化本
 ## 📁 目录结构
 
 ```
-novaplayer/
+novidplayer/
 ├── scripts/
 │   └── setup-mpv.ps1               # MPV 便携版引擎依赖检测与自动配置脚本
 ├── src-tauri/                      # Tauri v2 (Rust) 后端

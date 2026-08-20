@@ -100,11 +100,11 @@ export const SettingsModal: React.FC = () => {
             </div>
           </div>
 
-          {/* About NovaPlayer Footer */}
+          {/* About NovidPlayer Footer */}
           <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
             <span className="flex items-center gap-1">
               <Info className="w-3 h-3 text-sky-400" />
-              <span>NovaPlayer v1.0.0</span>
+              <span>NovidPlayer v1.0.0</span>
             </span>
             <span className="font-mono text-[10px] text-slate-400">Tauri v2 + MPV Engine</span>
           </div>

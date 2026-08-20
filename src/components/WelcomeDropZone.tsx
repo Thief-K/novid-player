@@ -3,7 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen } from "lucide-react";
 import { usePlayerStore } from "../stores/playerStore";
 import { isTauri, mpvService } from "../services/mpvService";
-import { NovaLogo } from "./NovaLogo";
+import { NovidLogo } from "./NovidLogo";
 
 export const WelcomeDropZone: React.FC = () => {
   const { loadAndPlay } = usePlayerStore();
@@ -70,18 +70,14 @@ export const WelcomeDropZone: React.FC = () => {
         <button
           onClick={handleOpenFile}
           title="打开视频文件 (Ctrl+O) 或直接拖入"
-          className="group relative flex flex-col items-center justify-center p-8 rounded-3xl border border-slate-700/40 bg-slate-900/30 hover:border-sky-500/50 hover:bg-slate-900/60 transition-all duration-300 shadow-2xl hover:shadow-[0_0_40px_rgba(56,189,248,0.25)] active:scale-95 cursor-pointer backdrop-blur-xl"
+          className="group relative flex items-center justify-center p-7 rounded-3xl border border-slate-700/40 bg-slate-900/30 hover:border-sky-500/50 hover:bg-slate-900/60 transition-all duration-300 shadow-2xl hover:shadow-[0_0_40px_rgba(56,189,248,0.25)] active:scale-95 cursor-pointer backdrop-blur-xl"
         >
-          {/* Glowing NovaLogo with subtle FolderOpen badge */}
+          {/* Glowing NovidLogo with subtle FolderOpen badge */}
           <div className="relative transition-transform duration-300 group-hover:scale-105">
-            <NovaLogo size={88} glow={true} />
+            <NovidLogo size={92} glow={true} />
             <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg border-2 border-slate-900 group-hover:scale-110 transition-transform">
               <FolderOpen className="w-3.5 h-3.5" />
             </div>
-          </div>
-
-          <div className="mt-4 text-xs font-medium tracking-wide text-slate-300 group-hover:text-sky-300 transition-colors">
-            NovaPlayer
           </div>
         </button>
       </div>

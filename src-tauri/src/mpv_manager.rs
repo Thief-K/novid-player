@@ -17,7 +17,7 @@ pub struct MpvManager {
 impl MpvManager {
     pub fn new() -> Self {
         let pid = std::process::id();
-        let pipe_name = format!(r"\\.\pipe\mpvsocket_novaplayer_{}", pid);
+        let pipe_name = format!(r"\\.\pipe\mpvsocket_novidplayer_{}", pid);
         Self {
             ipc: Arc::new(RwLock::new(None)),
             child: Arc::new(Mutex::new(None)),
@@ -125,7 +125,7 @@ impl MpvManager {
         let _ = std::fs::create_dir_all(&screenshots_dir);
 
         cmd.arg(format!("--screenshot-directory={}", screenshots_dir))
-            .arg("--screenshot-template=NovaPlayer_%F_%p")
+            .arg("--screenshot-template=NovidPlayer_%F_%p")
             .arg("--screenshot-format=png")
             .arg("--screenshot-png-compression=7");
 

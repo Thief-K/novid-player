@@ -3,7 +3,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Pin, PinOff, Minus, Square, Copy, X, Clock, Settings } from "lucide-react";
 import { usePlayerStore } from "../stores/playerStore";
 import { isTauri, mpvService } from "../services/mpvService";
-import { NovaLogo } from "./NovaLogo";
+import { NovidLogo } from "./NovidLogo";
 import { HistoryModal } from "./HistoryModal";
 
 export const TitleBar: React.FC = () => {
@@ -74,8 +74,8 @@ export const TitleBar: React.FC = () => {
       >
         {/* Left: App Logo & Current File Title */}
         <div className="flex items-center gap-2 max-w-[65%] overflow-hidden" data-tauri-drag-region>
-          <NovaLogo size={18} />
-          <span className="text-xs font-semibold tracking-wide text-slate-300">NovaPlayer</span>
+          <NovidLogo size={18} />
+          <span className="text-xs font-semibold tracking-wide text-slate-300">NovidPlayer</span>
           {currentPath && (
             <>
               <span className="text-slate-600 text-xs">/</span>
@@ -126,6 +126,9 @@ export const TitleBar: React.FC = () => {
           >
             {pinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
           </button>
+
+          {/* Vertical Divider */}
+          <div className="w-px h-3.5 bg-slate-700/60 mx-1 shrink-0" />
 
           {/* Minimize */}
           <button

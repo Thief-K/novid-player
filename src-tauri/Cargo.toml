@@ -1,12 +1,12 @@
 [package]
-name = "novaplayer"
+name = "novidplayer"
 version = "1.0.0"
 description = "Modern Minimalist MPV Video Player for Windows 11"
-authors = ["NovaPlayer Team"]
+authors = ["NovidPlayer Team"]
 edition = "2021"
 
 [lib]
-name = "novaplayer_lib"
+name = "novidplayer_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

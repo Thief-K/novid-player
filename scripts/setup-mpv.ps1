@@ -13,7 +13,7 @@ if (-not (Test-Path $binariesDir)) {
 $mpvTarget = Join-Path $binariesDir "mpv.exe"
 
 Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "   NovaPlayer - MPV 引擎依赖检测与配置程序" -ForegroundColor Cyan
+Write-Host "   NovidPlayer - MPV 引擎依赖检测与配置程序" -ForegroundColor Cyan
 Write-Host "==================================================" -ForegroundColor Cyan
 
 # 1. 检查当前 binaries 目录是否已有 mpv.exe

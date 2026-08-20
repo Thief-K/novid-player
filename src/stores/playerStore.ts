@@ -500,7 +500,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
     }),
     {
-      name: "novaplayer_storage",
+      name: "novidplayer_storage",
       partialize: (state) => ({
         volume: state.volume,
         muted: state.muted,
