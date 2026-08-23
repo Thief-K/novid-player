@@ -1,7 +1,27 @@
 {
   "name": "novid-player",
   "version": "1.0.0",
-  "private": true,
+  "description": "Modern Minimalist MPV Video Player for Windows 11",
+  "keywords": [
+    "direct3d11",
+    "hardware-decoding",
+    "media-player",
+    "mpv",
+    "react",
+    "tauri",
+    "video-player",
+    "windows-11"
+  ],
+  "homepage": "https://github.com/Thief-K/novid-player",
+  "bugs": {
+    "url": "https://github.com/Thief-K/novid-player/issues"
+  },
+  "license": "GPL-3.0-or-later",
+  "author": "NovidPlayer Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Thief-K/novid-player.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

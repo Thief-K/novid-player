@@ -43,6 +43,7 @@ pub fn run() {
             commands::toggle_window_maximize,
             commands::auto_fit_window,
             commands::get_startup_paths,
+            commands::open_external_url,
         ])
         .setup(move |app| {
             let window = app.get_webview_window("main").expect("Failed to get main window");

@@ -18,7 +18,17 @@ impl Default for ThumbnailManager {
 
 impl ThumbnailManager {
     pub fn new() -> Self {
-        let temp_base = std::env::temp_dir().join("novidplayer_thumbs");
+        let base_dir = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(Path::to_path_buf))
+            .unwrap_or_else(|| PathBuf::from("."));
+
+        let temp_base = if base_dir.join("portable.dat").exists() || base_dir.join("data").exists() {
+            base_dir.join("data").join("temp").join("novidplayer_thumbs")
+        } else {
+            std::env::temp_dir().join("novidplayer_thumbs")
+        };
+
         let session_id = format!("session_{}", std::process::id());
         let session_dir = temp_base.join(session_id);
         let _ = std::fs::create_dir_all(&session_dir);

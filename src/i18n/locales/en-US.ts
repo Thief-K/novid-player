@@ -110,9 +110,9 @@ export const enUS: TranslationSchema = {
     aboutTitle: "NovidPlayer",
     aboutDesc:
       "A minimalist, low-latency, high-performance local video player powered by Tauri v2 & MPV.",
-    aboutArch: "Architecture & Engine",
-    techStack: "DirectComposition transparent overlay + 64-bit Direct3D 11 hardware pipeline",
-    appVersion: "Version",
+    copyDiagnostic: "Copy Diagnostic Info",
+    diagnosticCopied: "Diagnostic info copied to clipboard",
+    githubRepo: "GitHub Repository",
   },
   tracks: {
     audioTitle: "Audio Tracks",

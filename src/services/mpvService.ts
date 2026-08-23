@@ -258,4 +258,17 @@ export const mpvService = {
       callback(event.payload);
     });
   },
+
+  async openExternalUrl(url: string): Promise<void> {
+    if (!isTauri()) {
+      window.open(url, "_blank");
+      return;
+    }
+    try {
+      await invoke("open_external_url", { url });
+    } catch (err) {
+      console.warn("[MPV] Failed to open external URL:", err);
+      window.open(url, "_blank");
+    }
+  },
 };

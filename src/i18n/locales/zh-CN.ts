@@ -103,9 +103,9 @@ export const zhCN = {
     hotkeyDoubleClick: "双击",
     aboutTitle: "NovidPlayer",
     aboutDesc: "基于 Tauri v2 与 MPV 打造的极简、低延迟、高性能本地视频播放器",
-    aboutArch: "架构技术栈",
-    techStack: "DirectComposition 渲染透明通道 + 64 位 Direct3D 11 硬件加速",
-    appVersion: "版本号",
+    copyDiagnostic: "复制系统诊断信息",
+    diagnosticCopied: "诊断信息已复制到剪贴板",
+    githubRepo: "GitHub 源码仓库",
   },
   tracks: {
     audioTitle: "音轨设置 (Audio Tracks)",

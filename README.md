@@ -1,65 +1,101 @@
 # 🎬 NovidPlayer
 
-**NovidPlayer** 是一款专为 Windows 11 打造的高性能、极简、现代化本地视频播放器。
+<p align="center">
+  <strong>A modern, minimalist, high-performance local video player built for Windows 11.</strong>
+</p>
 
-基于 **Tauri v2 (Rust)** 与 **MPV 高性能硬解内核** 构建，配合 **React 19 + Tailwind CSS** 提供如同流媒体般的纯净沉浸式播放体验。
+<p align="center">
+  <a href="https://github.com/Thief-K/novid-player/releases"><img src="https://img.shields.io/github/v/release/Thief-K/novid-player?style=flat-square&color=0284c7" alt="Latest Release"></a>
+  <a href="https://github.com/Thief-K/novid-player/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Thief-K/novid-player/ci.yml?branch=main&style=flat-square&label=CI" alt="CI Build Status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg?style=flat-square" alt="License: GPL-3.0"></a>
+  <a href="https://tauri.app"><img src="https://img.shields.io/badge/Tauri-v2-24C8D8.svg?style=flat-square&logo=tauri&logoColor=white" alt="Tauri v2"></a>
+  <img src="https://img.shields.io/badge/Platform-Windows%2011-0078D6.svg?style=flat-square&logo=windows&logoColor=white" alt="Windows 11">
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome"></a>
+</p>
 
----
-
-## ✨ 核心特性
-
-- **现代流媒体视觉 (OSD)**：全屏无边框毛玻璃沉浸式界面，控制栏自动隐藏/唤醒。
-- **自适应视频原生分辨率**：打开视频时自动按 1:1 原生像素调整窗口大小并居中；4K/8K 超高清视频智能约束在屏幕工作区 85% 以内，防止溢出。
-- **MPV 硬件加速**：Direct3D 11 / NVDEC 原生硬解，超低 CPU 占用流畅播放 4K 60fps 10-bit HEVC / AV1。
-- **流媒体级实时缩略图预览**：悬停 300ms 智能激活高清画面预览卡片，支持平滑横向拖拽与 LRU 毫秒级内存缓存。
-- **桌面级级联右键菜单**：纯净单列菜单，提供倍速与画面比例的悬停级联二级子菜单（带 ✓ 生效指示与智能边界翻折）。
-- **原生多语言国际化 (i18n)**：支持简体中文与 English，支持跟随 Windows 系统语言或手动切换。
-- **Windows 原生集成与快速打开方式**：全面关联主流音视频格式，安装后即可在 Windows 资源管理器右键“打开方式”中一键起播；支持单实例（Single Instance）跨进程唤醒与多文件无缝切换。
-- **4 标签设置中心**：常规偏好、硬件解码管线配置（带 GPU 兼容回退检测）、快捷键速查与专属关于信息。
-- **专业播放控制**：
-  - **音量增强**：0% ~ 150% 增益调节；
-  - **无级倍速**：0.25x ~ 4.0x 精确微调与常用预设；
-  - **音轨与外挂字幕**：支持 `.srt / .ass / .vtt` 拖拽载入与毫秒级时延校准；
-  - **色彩与画面比例**：16:9 / 4:3 / 21:9 强制比例，亮暗度与对比度微调；
-  - **播放记忆与列表**：自动记忆历史断点，抽屉式播放列表支持多文件拖拽与片尾从头重播。
+<p align="center">
+  <strong>English</strong> | <a href="README_zh.md">简体中文</a>
+</p>
 
 ---
 
-## ⌨️ 快捷键速查
+## ✨ Key Features
 
-| 快捷键       | 功能              | 快捷键            | 功能                |
-| :----------- | :---------------- | :---------------- | :------------------ |
-| **Space**    | 播放 / 暂停       | **F / 双击画面**  | 进入 / 退出全屏     |
-| **← / →**    | 快退 5s / 快进 5s | **Shift + ← / →** | 精确步进 1s         |
-| **↑ / ↓**    | 音量调节 ±5%      | **M**             | 静音切换            |
-| **[ / ]**    | 播放速度 ±0.1x    | **Backspace**     | 恢复 1.0x 正常倍速  |
-| **C / V**    | 切换字幕 / 音轨   | **S**             | 高清截图至相册      |
-| **. / ,**    | 逐帧前进 / 后退   | **L**             | 打开 / 收起播放列表 |
-| **Ctrl + O** | 选择本地文件      | **Escape**        | 退出全屏 / 关闭弹窗 |
+- **Fluid Glassmorphic OSD**: Borderless frameless design with translucent acrylic blur and auto-hiding OSD playback controls.
+- **Native 1:1 Auto-Fit Resolution**: Dynamically scales the player window to match native video display resolution with intelligent 85% screen work-area bounds for 4K / 8K content.
+- **MPV Hardware Pipeline**: Direct3D 11 & NVDEC hardware-accelerated decoding for ultra-low CPU usage across 4K 60fps 10-bit HEVC / AV1 videos.
+- **Hover Thumbnail Scrubber**: Real-time video frame previews triggered at 300ms dwell with LRU in-memory caching and smooth scrubbing.
+- **Desktop-Grade Context Menu**: Clean cascading context menu with submenus for speed rate and aspect ratio switching.
+- **Native Bilingual i18n**: Type-safe zero-dependency internationalization supporting English and Simplified Chinese (auto-detected or manually switched).
+- **Deep Windows Integration**: Comprehensive file associations for instant playback via Windows Explorer "Open with", paired with single-instance multi-file queueing.
+- **Comprehensive Settings Hub**: General preferences, decoder pipeline status check with fallback warning, categorized shortcut guides, and one-click diagnostic info export.
+- **Pro Playback Controls**:
+  - **Audio Boost**: 0% ~ 150% gain amplification;
+  - **Stepless Speed**: 0.25x ~ 4.0x fine-tuning with quick presets;
+  - **Tracks & External Subtitles**: `.srt / .ass / .vtt` drag-and-drop loading with millisecond audio/subtitle delay sync;
+  - **Color & Aspect Adjustments**: 16:9 / 4:3 / 21:9 aspect toggles, brightness, and contrast fine-tuning;
+  - **Playback Memory & History**: Automatic breakpoint resume with drawer playlist management.
 
 ---
 
-## 🚀 快速开始
+## ⌨️ Keyboard Shortcuts
 
-### 1. 环境准备与依赖安装
+| Key          | Action                     | Key                  | Action                  |
+| :----------- | :------------------------- | :------------------- | :---------------------- |
+| **Space**    | Play / Pause               | **F / Double Click** | Enter / Exit Fullscreen |
+| **← / →**    | Seek Backward / Forward 5s | **Shift + ← / →**    | Precise Step 1s         |
+| **↑ / ↓**    | Volume ±5%                 | **M**                | Toggle Mute             |
+| **[ / ]**    | Playback Speed ±0.1x       | **Backspace**        | Reset Speed to 1.0x     |
+| **C / V**    | Cycle Subtitles / Audio    | **S**                | Snapshot Frame to Disk  |
+| **. / ,**    | Frame Step Forward / Back  | **L**                | Toggle Playlist Drawer  |
+| **Ctrl + O** | Open Local File            | **Escape**           | Exit Fullscreen / Close |
 
-- Node.js >= 18, `pnpm` >= 9
-- Rust toolchain (stable-msvc)
+---
+
+## 🚀 Getting Started
+
+### 📦 Download
+
+Grab the latest build from the [GitHub Releases](https://github.com/Thief-K/novid-player/releases) page:
+
+- **Installer Edition**: `NovidPlayer-vX.Y.Z-setup.exe` (NSIS Installer)
+- **Portable Edition**: `NovidPlayer-vX.Y.Z-windows-x64-portable.zip` (Green, self-contained)
+
+---
+
+### 🛠️ Building from Source
+
+#### Prerequisites
+
+- **Node.js**: >= 18.0.0, **pnpm**: >= 9.0.0
+- **Rust Toolchain**: `stable-x86_64-pc-windows-msvc`
 
 ```powershell
+# 1. Clone repository & install dependencies
+git clone https://github.com/Thief-K/novid-player.git
+cd novid-player
 pnpm install
-pnpm setup-mpv   # 自动下载并配置 mpv.exe 核心依赖
-```
 
-### 2. 运行与构建
+# 2. Automatically download and configure MPV engine
+pnpm setup-mpv
 
-```powershell
-pnpm tauri dev   # 启动桌面开发模式
-pnpm tauri build # 构建发布版 Windows 安装包 (MSI / NSIS)
+# 3. Start development server
+pnpm tauri dev
+
+# 4. Build release bundle (NSIS Installer)
+pnpm tauri build
 ```
 
 ---
 
-## 📖 开发者与架构文档
+## 📖 Architecture & Contribution
 
-关于项目的底层 IPC 通信设计、Direct3D 11 渲染机制、目录架构以及编码规范，请参阅 [AGENTS.md](./AGENTS.md)。
+- **AI Agents & Architecture Manual**: Detailed IPC protocols, Direct3D 11 swapchain mechanics, window resizing bounds, and thumbnail cache specs can be found in [AGENTS.md](AGENTS.md).
+- **Contributing**: Please review our [Contributing Guide](CONTRIBUTING.md) before opening issues or pull requests.
+
+---
+
+## 📜 License
+
+NovidPlayer is licensed under the [GNU General Public License v3.0 (GPL-3.0)](LICENSE).
+Third-party component licenses and attributions are listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).

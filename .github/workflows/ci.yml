@@ -1,0 +1,70 @@
+name: 🧪 Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-test:
+    name: Lint & Test (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: clippy, rustfmt
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install Frontend Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download & Setup MPV Engine
+        shell: powershell
+        run: pnpm setup-mpv
+
+      - name: Frontend Linters & Formatting Check
+        run: |
+          pnpm lint
+          pnpm format:check
+
+      - name: Frontend Vitest Unit Tests
+        run: pnpm test
+
+      - name: Frontend Build
+        run: pnpm build
+
+      - name: Rust Cargo Check & Clippy
+        run: |
+          cd src-tauri
+          cargo check --verbose
+          cargo clippy -- -D warnings
+          cd ..
+
+      - name: Rust Cargo Unit Tests
+        run: pnpm test:backend
