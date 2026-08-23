@@ -2,6 +2,7 @@ import React from "react";
 import { usePlayerStore } from "../stores/playerStore";
 import { Trash2, X, Play } from "lucide-react";
 import { useTranslation } from "../i18n";
+import { formatTime } from "../utils/format";
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -13,13 +14,6 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) =
   const { t } = useTranslation();
 
   if (!isOpen) return null;
-
-  const formatDuration = (sec: number) => {
-    if (!sec || isNaN(sec)) return "00:00";
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
 
   return (
     <div
@@ -76,7 +70,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) =
 
                 {/* Duration */}
                 <div className="text-[10px] font-mono text-slate-500 group-hover:text-slate-400 shrink-0">
-                  {formatDuration(item.lastPosition)} / {formatDuration(item.duration)}
+                  {formatTime(item.lastPosition)} / {formatTime(item.duration)}
                 </div>
               </div>
             ))

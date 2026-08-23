@@ -18,40 +18,17 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_opener::init())
         .manage(mpv_manager)
         .manage(thumbnail_manager)
         .invoke_handler(tauri::generate_handler![
             commands::mpv_command,
             commands::mpv_set_property,
             commands::load_file,
-            commands::play_pause,
-            commands::set_pause,
-            commands::seek,
-            commands::set_volume,
-            commands::set_mute,
-            commands::set_speed,
-            commands::set_track,
-            commands::load_sub,
-            commands::load_audio,
-            commands::set_sub_delay,
-            commands::set_audio_delay,
-            commands::set_video_aspect,
-            commands::set_video_adjust,
-            commands::frame_step,
             commands::take_screenshot,
             commands::check_mpv_status,
             commands::get_video_thumbnail,
             commands::cleanup_thumbnails,
-            commands::start_window_dragging,
             commands::toggle_window_maximize,
-            commands::toggle_window_fullscreen,
-            commands::is_window_fullscreen,
-            commands::minimize_window,
-            commands::close_window,
-            commands::set_window_always_on_top,
             commands::auto_fit_window,
         ])
         .setup(move |app| {

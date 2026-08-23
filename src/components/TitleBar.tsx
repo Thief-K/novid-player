@@ -8,7 +8,7 @@ import { HistoryModal } from "./HistoryModal";
 import { useTranslation } from "../i18n";
 
 export const TitleBar: React.FC = () => {
-  const { mediaTitle, currentPath, isPinned, isControlVisible, history, toggleSettings } =
+  const { mediaTitle, currentPath, isPinned, isControlVisible, history, togglePanel } =
     usePlayerStore();
   const { t } = useTranslation();
   const [isMaximized, setIsMaximized] = useState(false);
@@ -114,7 +114,7 @@ export const TitleBar: React.FC = () => {
 
           {/* Settings Button */}
           <button
-            onClick={() => toggleSettings(true)}
+            onClick={() => togglePanel("settings")}
             title={t("settings.title")}
             className="p-1.5 text-slate-400 hover:text-sky-300 hover:bg-white/10 rounded-md transition-colors mr-0.5"
           >

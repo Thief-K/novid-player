@@ -30,10 +30,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
     setSpeed,
     setAspectRatio,
     takeScreenshot,
-    togglePlaylist,
-    toggleTrackPanel,
-    toggleVideoAdjust,
-    toggleSettings,
+    togglePanel,
     videoAdjust,
   } = usePlayerStore();
   const { t } = useTranslation();
@@ -229,7 +226,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       {/* 4. Tracks & Subtitles */}
       <button
         onClick={() => {
-          toggleTrackPanel();
+          togglePanel("track");
           onClose();
         }}
         onMouseEnter={() => setActiveSubmenu(null)}
@@ -245,7 +242,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       {/* 5. Video Color Adjust */}
       <button
         onClick={() => {
-          toggleVideoAdjust();
+          togglePanel("videoAdjust");
           onClose();
         }}
         onMouseEnter={() => setActiveSubmenu(null)}
@@ -278,7 +275,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       {/* 7. Playlist */}
       <button
         onClick={() => {
-          togglePlaylist();
+          togglePanel("playlist");
           onClose();
         }}
         onMouseEnter={() => setActiveSubmenu(null)}
@@ -296,7 +293,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       {/* 8. Settings */}
       <button
         onClick={() => {
-          toggleSettings(true);
+          togglePanel("settings");
           onClose();
         }}
         onMouseEnter={() => setActiveSubmenu(null)}

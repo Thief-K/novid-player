@@ -11,28 +11,13 @@ export interface TrackInfo {
   "demux-samplerate"?: number;
 }
 
-export interface VideoParams {
-  pixelformat?: string;
-  hw_pixelformat?: string;
-  w?: number;
-  h?: number;
-  dw?: number;
-  dh?: number;
-  aspect?: number;
-  par?: number;
-  colormatrix?: string;
-  colorlevels?: string;
-  primaries?: string;
-  gamma?: string;
-}
+export type ActivePanel = "playlist" | "track" | "speed" | "videoAdjust" | "settings" | null;
 
 export interface PlaylistItem {
   id: string;
   title: string;
   path: string;
   duration?: number;
-  size?: number;
-  lastPlayedPosition?: number;
   addedAt: number;
 }
 

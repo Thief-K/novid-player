@@ -1,16 +1,12 @@
 use base64::prelude::*;
-use parking_lot::Mutex;
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tauri::AppHandle;
 
 #[derive(Clone)]
 pub struct ThumbnailManager {
     temp_dir: PathBuf,
-    cache: Arc<Mutex<HashMap<String, String>>>,
     semaphore: Arc<tokio::sync::Semaphore>,
 }
 
@@ -29,7 +25,6 @@ impl ThumbnailManager {
 
         Self {
             temp_dir: session_dir,
-            cache: Arc::new(Mutex::new(HashMap::new())),
             semaphore: Arc::new(tokio::sync::Semaphore::new(2)),
         }
     }
@@ -42,7 +37,6 @@ impl ThumbnailManager {
 
     pub async fn get_thumbnail(
         &self,
-        _app_handle: &AppHandle,
         mpv_path: &Path,
         video_path: &str,
         time_sec: f64,
@@ -53,26 +47,15 @@ impl ThumbnailManager {
         let path_hash = Self::hash_path(video_path);
         let cache_key = format!("{:x}_{:.1}", path_hash, time_quantized);
 
-        // 1. Check in-memory cache
-        {
-            let lock = self.cache.lock();
-            if let Some(data_url) = lock.get(&cache_key) {
-                return Ok(data_url.clone());
-            }
-        }
-
-        // 2. Check disk cache
+        // 1. Check disk cache
         let target_file = self.temp_dir.join(format!("{}.jpg", cache_key));
         if target_file.exists() && target_file.metadata().map(|m| m.len() > 0).unwrap_or(false) {
             if let Ok(bytes) = std::fs::read(&target_file) {
-                let data_url = format!("data:image/jpeg;base64,{}", BASE64_STANDARD.encode(&bytes));
-                let mut lock = self.cache.lock();
-                lock.insert(cache_key, data_url.clone());
-                return Ok(data_url);
+                return Ok(format!("data:image/jpeg;base64,{}", BASE64_STANDARD.encode(&bytes)));
             }
         }
 
-        // 3. Extract frame using MPV with concurrency limiting
+        // 2. Extract frame using MPV with concurrency limiting
         if !Path::new(video_path).exists() {
             return Err("Video file not found".to_string());
         }
@@ -116,10 +99,7 @@ impl ThumbnailManager {
             if let Ok(bytes) = std::fs::read(&extracted_frame) {
                 let _ = std::fs::rename(&extracted_frame, &target_file);
                 let _ = std::fs::remove_dir_all(&out_dir);
-                let data_url = format!("data:image/jpeg;base64,{}", BASE64_STANDARD.encode(&bytes));
-                let mut lock = self.cache.lock();
-                lock.insert(cache_key, data_url.clone());
-                return Ok(data_url);
+                return Ok(format!("data:image/jpeg;base64,{}", BASE64_STANDARD.encode(&bytes)));
             }
         }
         let _ = std::fs::remove_dir_all(&out_dir);

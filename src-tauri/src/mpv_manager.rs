@@ -55,25 +55,23 @@ impl MpvManager {
         }
 
         // 4. Check candidates exist
-        for candidate in &candidates {
-            if candidate.exists() {
-                log::info!("Found MPV binary at: {:?}", candidate);
-                return Some(candidate.clone());
-            }
+        if let Some(found) = candidates.into_iter().find(|p| p.exists()) {
+            log::info!("Found MPV binary at: {:?}", found);
+            return Some(found);
         }
 
         // 5. System PATH lookup
         if let Ok(path_var) = std::env::var("PATH") {
-            for dir in std::env::split_paths(&path_var) {
-                let mpv_exe = dir.join("mpv.exe");
-                if mpv_exe.exists() {
-                    log::info!("Found MPV in system PATH: {:?}", mpv_exe);
-                    return Some(mpv_exe);
-                }
+            if let Some(found) = std::env::split_paths(&path_var)
+                .map(|d| d.join("mpv.exe"))
+                .find(|p| p.exists())
+            {
+                log::info!("Found MPV in system PATH: {:?}", found);
+                return Some(found);
             }
         }
 
-        log::warn!("MPV binary not found in candidates: {:?}", candidates);
+        log::warn!("MPV binary not found in standard paths");
         None
     }
 
@@ -145,23 +143,5 @@ impl MpvManager {
         } else {
             Err("MPV IPC client is not connected".into())
         }
-    }
-
-    pub async fn stop(&self) {
-        log::info!("Stopping MPV engine...");
-        let client_opt = self.ipc.read().clone();
-        if let Some(client) = client_opt {
-            let _ = client
-                .send_command(vec![Value::String("quit".to_string())])
-                .await;
-        }
-
-        let mut child_guard = self.child.lock().await;
-        if let Some(mut child) = child_guard.take() {
-            let _ = child.kill().await;
-        }
-
-        let mut ipc_guard = self.ipc.write();
-        *ipc_guard = None;
     }
 }

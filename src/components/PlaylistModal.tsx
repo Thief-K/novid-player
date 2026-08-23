@@ -9,8 +9,8 @@ export const PlaylistModal: React.FC = () => {
   const {
     playlist,
     currentPlayingIndex,
-    isPlaylistOpen,
-    togglePlaylist,
+    activePanel,
+    togglePanel,
     playIndex,
     removeFromPlaylist,
     clearPlaylist,
@@ -18,7 +18,7 @@ export const PlaylistModal: React.FC = () => {
   } = usePlayerStore();
   const { t } = useTranslation();
 
-  if (!isPlaylistOpen) return null;
+  if (activePanel !== "playlist") return null;
 
   const handleAddFiles = async () => {
     try {
@@ -62,7 +62,7 @@ export const PlaylistModal: React.FC = () => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs select-none animate-in fade-in duration-100"
-      onClick={() => togglePlaylist(false)}
+      onClick={() => togglePanel("playlist")}
     >
       <div
         className="relative max-w-md w-full bg-[#0f141c]/95 border border-slate-700/60 rounded-2xl shadow-2xl p-3.5 flex flex-col text-slate-200 backdrop-blur-xl max-h-[75vh]"
@@ -91,7 +91,7 @@ export const PlaylistModal: React.FC = () => {
               </button>
             )}
             <button
-              onClick={() => togglePlaylist(false)}
+              onClick={() => togglePanel("playlist")}
               title={t("common.close")}
               className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"
             >

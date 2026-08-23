@@ -49,7 +49,7 @@ export const SpeedPanel: React.FC = () => {
       {/* Fine-tuning Slider */}
       <div className="space-y-1">
         <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-          <span>微调: 0.25x</span>
+          <span>0.25x</span>
           <span className="text-sky-400 font-bold">{speed.toFixed(2)}x</span>
           <span>4.0x</span>
         </div>

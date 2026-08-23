@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { usePlayerStore } from "../stores/playerStore";
 import { mpvService } from "../services/mpvService";
+import { formatTime } from "../utils/format";
 
 export const ProgressBar: React.FC = () => {
   const { currentTime, duration, bufferPercent, seek, currentPath } = usePlayerStore();
@@ -119,17 +120,6 @@ export const ProgressBar: React.FC = () => {
       }
     };
   }, [calculateRatio, duration, isDragging, seek]);
-
-  const formatTime = (seconds: number): string => {
-    if (isNaN(seconds) || seconds < 0) return "00:00";
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    if (h > 0) {
-      return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-    }
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
 
   const progressPercent = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 

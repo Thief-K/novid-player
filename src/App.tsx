@@ -83,6 +83,19 @@ export const App: React.FC = () => {
       unlisten = await mpvService.listenEvents((payload) => {
         usePlayerStore.getState().handleMpvEvent(payload);
       });
+
+      if (await mpvService.isAvailable()) {
+        const { volume, muted, hwdec, speed } = usePlayerStore.getState();
+        await mpvService.setVolume(volume);
+        await mpvService.setMute(muted);
+        if (speed !== 1.0) {
+          await mpvService.setSpeed(speed);
+        }
+        if (hwdec && hwdec !== "auto-safe") {
+          await mpvService.sendRawCommand(["set_property", "hwdec", hwdec]);
+        }
+        usePlayerStore.setState({ isMpvReady: true });
+      }
     };
     init();
 
@@ -132,13 +145,7 @@ export const App: React.FC = () => {
     // Only auto hide if video is loaded and not paused
     if (store.currentPath && !store.paused) {
       hideTimerRef.current = setTimeout(() => {
-        if (
-          !store.isPlaylistOpen &&
-          !store.isTrackPanelOpen &&
-          !store.isSpeedPanelOpen &&
-          !store.isVideoAdjustOpen &&
-          !store.isSettingsOpen
-        ) {
+        if (!store.activePanel) {
           store.setControlVisible(false);
         }
       }, 2000);

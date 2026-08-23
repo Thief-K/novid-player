@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -8,22 +7,6 @@ use tokio::net::windows::named_pipe::ClientOptions;
 use tokio::sync::mpsc;
 
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IpcMessage {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub command: Option<Vec<Value>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request_id: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub event: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub data: Option<Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-}
 
 #[derive(Clone)]
 pub struct MpvIpcClient {
@@ -104,6 +87,13 @@ impl MpvIpcClient {
 
         let client_instance = Self { tx };
         client_instance.setup_observers().await?;
+
+        let _ = app_handle.emit(
+            "mpv-event",
+            serde_json::json!({
+                "event": "mpv-ready"
+            }),
+        );
 
         Ok(client_instance)
     }

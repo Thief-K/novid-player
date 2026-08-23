@@ -24,6 +24,8 @@ import { isTauri, mpvService } from "../services/mpvService";
 
 import { useTranslation } from "../i18n";
 
+import { formatTime } from "../utils/format";
+
 export const FloatingControls: React.FC = () => {
   const {
     paused,
@@ -32,19 +34,13 @@ export const FloatingControls: React.FC = () => {
     speed,
     currentPath,
     isControlVisible,
-    isSpeedPanelOpen,
-    isTrackPanelOpen,
-    isVideoAdjustOpen,
-    isPlaylistOpen,
+    activePanel,
     togglePlayPause,
     seek,
     playNext,
     playPrev,
     takeScreenshot,
-    toggleSpeedPanel,
-    toggleTrackPanel,
-    toggleVideoAdjust,
-    togglePlaylist,
+    togglePanel,
   } = usePlayerStore();
   const { t } = useTranslation();
 
@@ -73,25 +69,14 @@ export const FloatingControls: React.FC = () => {
     }
   };
 
-  const formatTime = (seconds: number): string => {
-    if (isNaN(seconds) || seconds < 0) return "00:00";
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    if (h > 0) {
-      return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-    }
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
-
   if (!currentPath) return null;
 
   return (
     <>
       {/* Floating Panel Drawers */}
-      {isTrackPanelOpen && <TrackPanel />}
-      {isSpeedPanelOpen && <SpeedPanel />}
-      {isVideoAdjustOpen && <VideoAdjustPanel />}
+      {activePanel === "track" && <TrackPanel />}
+      {activePanel === "speed" && <SpeedPanel />}
+      {activePanel === "videoAdjust" && <VideoAdjustPanel />}
 
       {/* Main Bottom Control Bar */}
       <div
@@ -184,10 +169,10 @@ export const FloatingControls: React.FC = () => {
 
               {/* Speed Toggle Pill */}
               <button
-                onClick={() => toggleSpeedPanel()}
+                onClick={() => togglePanel("speed")}
                 title={t("controls.speed")}
                 className={`px-2.5 py-1 text-xs font-mono font-medium rounded-lg border transition-all ${
-                  isSpeedPanelOpen || speed !== 1.0
+                  activePanel === "speed" || speed !== 1.0
                     ? "bg-sky-500/20 text-sky-300 border-sky-500/40"
                     : "bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-700/80"
                 }`}
@@ -197,10 +182,10 @@ export const FloatingControls: React.FC = () => {
 
               {/* Track / Subtitles */}
               <button
-                onClick={() => toggleTrackPanel()}
+                onClick={() => togglePanel("track")}
                 title={t("controls.tracks")}
                 className={`p-2 rounded-xl transition-colors ${
-                  isTrackPanelOpen
+                  activePanel === "track"
                     ? "bg-sky-500/20 text-sky-300"
                     : "text-slate-300 hover:text-white hover:bg-white/10"
                 }`}
@@ -210,10 +195,10 @@ export const FloatingControls: React.FC = () => {
 
               {/* Video Color & Ratio Adjust */}
               <button
-                onClick={() => toggleVideoAdjust()}
+                onClick={() => togglePanel("videoAdjust")}
                 title={t("controls.videoAdjust")}
                 className={`p-2 rounded-xl transition-colors ${
-                  isVideoAdjustOpen
+                  activePanel === "videoAdjust"
                     ? "bg-sky-500/20 text-sky-300"
                     : "text-slate-300 hover:text-white hover:bg-white/10"
                 }`}
@@ -223,10 +208,10 @@ export const FloatingControls: React.FC = () => {
 
               {/* Playlist Drawer Toggle */}
               <button
-                onClick={() => togglePlaylist()}
+                onClick={() => togglePanel("playlist")}
                 title={t("controls.playlist")}
                 className={`p-2 rounded-xl transition-colors ${
-                  isPlaylistOpen
+                  activePanel === "playlist"
                     ? "bg-sky-500/20 text-sky-300"
                     : "text-slate-300 hover:text-white hover:bg-white/10"
                 }`}

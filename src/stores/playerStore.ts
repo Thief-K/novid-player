@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
+  ActivePanel,
   PlayHistoryItem,
   PlaylistItem,
   ToastMessage,
@@ -9,6 +10,7 @@ import {
 } from "../types/player";
 import { mpvService, MpvEventPayload } from "../services/mpvService";
 import { t } from "../i18n";
+import { formatTime } from "../utils/format";
 
 const DEFAULT_VIDEO_ADJUST: VideoAdjustments = {
   brightness: 0,
@@ -41,11 +43,7 @@ interface PlayerState {
 
   // UI state
   isControlVisible: boolean;
-  isPlaylistOpen: boolean;
-  isTrackPanelOpen: boolean;
-  isSpeedPanelOpen: boolean;
-  isVideoAdjustOpen: boolean;
-  isSettingsOpen: boolean;
+  activePanel: ActivePanel;
   isPinned: boolean;
   isFullscreen: boolean;
   language: "auto" | "zh-CN" | "en-US";
@@ -62,11 +60,8 @@ interface PlayerState {
   setLanguage: (lang: "auto" | "zh-CN" | "en-US") => void;
   setAutoFitWindow: (enabled: boolean) => void;
   setControlVisible: (visible: boolean) => void;
-  togglePlaylist: (open?: boolean) => void;
-  toggleTrackPanel: (open?: boolean) => void;
-  toggleSpeedPanel: (open?: boolean) => void;
-  toggleVideoAdjust: (open?: boolean) => void;
-  toggleSettings: (open?: boolean) => void;
+  togglePanel: (panel: ActivePanel) => void;
+  closeAllPanels: () => void;
 
   loadAndPlay: (filePath: string, title?: string) => Promise<void>;
   addToPlaylist: (files: { path: string; title?: string }[]) => void;
@@ -127,11 +122,7 @@ export const usePlayerStore = create<PlayerState>()(
       isMpvReady: false,
 
       isControlVisible: true,
-      isPlaylistOpen: false,
-      isTrackPanelOpen: false,
-      isSpeedPanelOpen: false,
-      isVideoAdjustOpen: false,
-      isSettingsOpen: false,
+      activePanel: null,
       isPinned: false,
       isFullscreen: false,
       language: "auto",
@@ -146,48 +137,21 @@ export const usePlayerStore = create<PlayerState>()(
       setLanguage: (lang) => set({ language: lang }),
       setAutoFitWindow: (enabled) => set({ autoFitWindow: enabled }),
       setControlVisible: (visible) => set({ isControlVisible: visible }),
-      togglePlaylist: (open) =>
+      togglePanel: (panel) =>
         set((state) => ({
-          isPlaylistOpen: open !== undefined ? open : !state.isPlaylistOpen,
-          isTrackPanelOpen: false,
-          isSpeedPanelOpen: false,
-          isVideoAdjustOpen: false,
+          activePanel: state.activePanel === panel ? null : panel,
         })),
-      toggleTrackPanel: (open) =>
-        set((state) => ({
-          isTrackPanelOpen: open !== undefined ? open : !state.isTrackPanelOpen,
-          isPlaylistOpen: false,
-          isSpeedPanelOpen: false,
-          isVideoAdjustOpen: false,
-        })),
-      toggleSpeedPanel: (open) =>
-        set((state) => ({
-          isSpeedPanelOpen: open !== undefined ? open : !state.isSpeedPanelOpen,
-          isPlaylistOpen: false,
-          isTrackPanelOpen: false,
-          isVideoAdjustOpen: false,
-        })),
-      toggleVideoAdjust: (open) =>
-        set((state) => ({
-          isVideoAdjustOpen: open !== undefined ? open : !state.isVideoAdjustOpen,
-          isPlaylistOpen: false,
-          isTrackPanelOpen: false,
-          isSpeedPanelOpen: false,
-        })),
-      toggleSettings: (open) =>
-        set((state) => ({
-          isSettingsOpen: open !== undefined ? open : !state.isSettingsOpen,
-        })),
+      closeAllPanels: () => set({ activePanel: null }),
 
       loadAndPlay: async (filePath: string, title?: string) => {
         const cleanTitle = title || filePath.split(/[/\\]/).pop() || "未知文件";
 
         // Check if item exists in playlist, otherwise add it
         const currentPlaylist = get().playlist;
-        let index = currentPlaylist.findIndex((item) => item.path === filePath);
+        const index = currentPlaylist.findIndex((item) => item.path === filePath);
         if (index === -1) {
           const newItem: PlaylistItem = {
-            id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            id: crypto.randomUUID(),
             title: cleanTitle,
             path: filePath,
             addedAt: Date.now(),
@@ -212,6 +176,8 @@ export const usePlayerStore = create<PlayerState>()(
         const historyItem = get().history.find((h) => h.path === filePath);
         mpvService.cleanupThumbnails();
         await mpvService.loadFile(filePath);
+        await mpvService.setVolume(get().volume);
+        await mpvService.setMute(get().muted);
         await mpvService.setPause(false);
         set({
           paused: false,
@@ -242,7 +208,7 @@ export const usePlayerStore = create<PlayerState>()(
         // Update or add to history
         const newHistory = [
           {
-            id: `hist_${Date.now()}`,
+            id: crypto.randomUUID(),
             title: cleanTitle,
             path: filePath,
             lastPosition:
@@ -267,7 +233,7 @@ export const usePlayerStore = create<PlayerState>()(
         const newItems: PlaylistItem[] = files
           .filter((f) => !currentList.some((existing) => existing.path === f.path))
           .map((f) => ({
-            id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            id: crypto.randomUUID(),
             title: f.title || f.path.split(/[/\\]/).pop() || t("common.unknown"),
             path: f.path,
             addedAt: Date.now(),
@@ -361,14 +327,20 @@ export const usePlayerStore = create<PlayerState>()(
 
       setVolume: async (vol: number) => {
         const clamped = Math.max(0, Math.min(150, Math.round(vol)));
-        set({ volume: clamped, muted: clamped === 0 });
+        const wasMuted = get().muted;
+        const nextMuted = clamped === 0 ? true : wasMuted ? false : wasMuted;
+        set({ volume: clamped, muted: nextMuted });
         await mpvService.setVolume(clamped);
+        if (nextMuted !== wasMuted || clamped === 0) {
+          await mpvService.setMute(nextMuted);
+        }
       },
 
       toggleMute: async () => {
         const newMuted = !get().muted;
         set({ muted: newMuted });
         await mpvService.setMute(newMuted);
+        get().addToast(newMuted ? t("controls.mute") : t("controls.unmute"), undefined, "info");
       },
 
       setSpeed: async (speed: number) => {
@@ -498,7 +470,7 @@ export const usePlayerStore = create<PlayerState>()(
         );
         if (isDuplicate) return;
 
-        const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        const id = crypto.randomUUID();
         const newToast: ToastMessage = { id, title, description, type, duration: 2500 };
         set((state) => ({ toasts: [...state.toasts.slice(-3), newToast] }));
         setTimeout(() => {
@@ -516,6 +488,20 @@ export const usePlayerStore = create<PlayerState>()(
 
       handleMpvEvent: (payload: MpvEventPayload) => {
         if (!payload) return;
+
+        if (payload.event === "mpv-ready") {
+          set({ isMpvReady: true });
+          const { volume, muted, hwdec, speed } = get();
+          mpvService.setVolume(volume);
+          mpvService.setMute(muted);
+          if (speed !== 1.0) {
+            mpvService.setSpeed(speed);
+          }
+          if (hwdec && hwdec !== "auto-safe") {
+            mpvService.sendRawCommand(["set_property", "hwdec", hwdec]);
+          }
+          return;
+        }
 
         if (payload.event === "property-change" && payload.name) {
           const val = payload.data;
@@ -555,10 +541,14 @@ export const usePlayerStore = create<PlayerState>()(
               }
               break;
             case "volume":
-              if (typeof val === "number") set({ volume: Math.round(val) });
+              if (get().isMpvReady && typeof val === "number") {
+                set({ volume: Math.round(val) });
+              }
               break;
             case "mute":
-              if (typeof val === "boolean") set({ muted: val });
+              if (get().isMpvReady && typeof val === "boolean") {
+                set({ muted: val });
+              }
               break;
             case "speed":
               if (typeof val === "number") set({ speed: parseFloat(val.toFixed(2)) });
@@ -647,14 +637,3 @@ export const usePlayerStore = create<PlayerState>()(
     }
   )
 );
-
-function formatTime(seconds: number): string {
-  if (isNaN(seconds) || seconds < 0) return "00:00";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0) {
-    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  }
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-}

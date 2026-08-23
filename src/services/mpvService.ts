@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -28,144 +29,118 @@ export const mpvService = {
   async loadFile(path: string, mode: "replace" | "append" = "replace"): Promise<void> {
     if (isTauri()) {
       await invoke("load_file", { path, mode });
-    } else {
-      console.log("[Mock MPV] Load file:", path, mode);
-    }
-  },
-
-  async playPause(): Promise<void> {
-    if (isTauri()) {
-      await invoke("play_pause");
-    } else {
-      console.log("[Mock MPV] Play/Pause toggled");
     }
   },
 
   async setPause(pause: boolean): Promise<void> {
     if (isTauri()) {
-      await invoke("set_pause", { pause });
-    } else {
-      console.log("[Mock MPV] Set Pause:", pause);
+      await invoke("mpv_set_property", { property: "pause", value: pause });
     }
   },
 
   async seek(seconds: number, relative = false): Promise<void> {
     if (isTauri()) {
-      await invoke("seek", { seconds, relative });
-    } else {
-      console.log("[Mock MPV] Seek:", seconds, relative ? "(relative)" : "(absolute)");
+      await invoke("mpv_command", {
+        command: ["seek", seconds, relative ? "relative" : "absolute"],
+      });
     }
   },
 
   async setVolume(volume: number): Promise<void> {
     if (isTauri()) {
-      await invoke("set_volume", { volume });
-    } else {
-      console.log("[Mock MPV] Set Volume:", volume);
+      await invoke("mpv_set_property", { property: "volume", value: volume });
     }
   },
 
   async setMute(mute: boolean): Promise<void> {
     if (isTauri()) {
-      await invoke("set_mute", { mute });
-    } else {
-      console.log("[Mock MPV] Set Mute:", mute);
+      await invoke("mpv_set_property", { property: "mute", value: mute });
     }
   },
 
   async setSpeed(speed: number): Promise<void> {
     if (isTauri()) {
-      await invoke("set_speed", { speed });
-    } else {
-      console.log("[Mock MPV] Set Speed:", speed);
+      await invoke("mpv_set_property", { property: "speed", value: speed });
     }
   },
 
   async setTrack(trackType: "sid" | "aid" | "vid", id: number | string): Promise<void> {
     if (isTauri()) {
-      await invoke("set_track", { trackType, id });
-    } else {
-      console.log("[Mock MPV] Set Track:", trackType, id);
+      await invoke("mpv_set_property", { property: trackType, value: id });
     }
   },
 
   async loadSub(path: string): Promise<void> {
     if (isTauri()) {
-      await invoke("load_sub", { path });
-    } else {
-      console.log("[Mock MPV] Load Subtitle:", path);
+      await invoke("mpv_command", { command: ["sub-add", path, "select"] });
     }
   },
 
   async loadAudio(path: string): Promise<void> {
     if (isTauri()) {
-      await invoke("load_audio", { path });
-    } else {
-      console.log("[Mock MPV] Load Audio:", path);
+      await invoke("mpv_command", { command: ["audio-add", path, "select"] });
     }
   },
 
   async setSubDelay(delaySec: number): Promise<void> {
     if (isTauri()) {
-      await invoke("set_sub_delay", { delaySec });
-    } else {
-      console.log("[Mock MPV] Set Sub Delay:", delaySec);
+      await invoke("mpv_set_property", { property: "sub-delay", value: delaySec });
     }
   },
 
   async setAudioDelay(delaySec: number): Promise<void> {
     if (isTauri()) {
-      await invoke("set_audio_delay", { delaySec });
-    } else {
-      console.log("[Mock MPV] Set Audio Delay:", delaySec);
+      await invoke("mpv_set_property", { property: "audio-delay", value: delaySec });
     }
   },
 
   async setVideoAspect(ratio: string): Promise<void> {
+    const aspectMap: Record<string, string> = {
+      "16:9": "1.777778",
+      "4:3": "1.333333",
+      "21:9": "2.333333",
+      "1:1": "1.0",
+    };
+    const aspectVal = aspectMap[ratio] || "-1";
     if (isTauri()) {
-      await invoke("set_video_aspect", { ratio });
-    } else {
-      console.log("[Mock MPV] Set Video Aspect:", ratio);
+      await invoke("mpv_set_property", {
+        property: "video-aspect-override",
+        value: aspectVal,
+      });
     }
   },
 
   async setVideoAdjust(prop: string, val: number): Promise<void> {
     if (isTauri()) {
-      await invoke("set_video_adjust", { prop, val });
-    } else {
-      console.log("[Mock MPV] Set Video Adjust:", prop, val);
+      await invoke("mpv_set_property", { property: prop, value: val });
     }
   },
 
   async frameStep(forward: boolean): Promise<void> {
     if (isTauri()) {
-      await invoke("frame_step", { forward });
-    } else {
-      console.log("[Mock MPV] Frame Step:", forward ? "+1" : "-1");
+      await invoke("mpv_command", {
+        command: [forward ? "frame-step" : "frame-back-step"],
+      });
     }
   },
 
   async takeScreenshot(includeSubtitles = true): Promise<string> {
     if (isTauri()) {
       return await invoke<string>("take_screenshot", { includeSubtitles });
-    } else {
-      console.log("[Mock MPV] Screenshot taken, include subs:", includeSubtitles);
-      return "Pictures/Screenshots";
     }
+    return "Pictures/Screenshots";
   },
 
   async sendRawCommand(args: any[]): Promise<number | undefined> {
     if (isTauri()) {
       return await invoke<number>("mpv_command", { command: args });
-    } else {
-      console.log("[Mock MPV] Raw Command:", args);
-      return 0;
     }
+    return 0;
   },
 
   async startDragging(): Promise<void> {
     if (isTauri()) {
-      await invoke("start_window_dragging");
+      await getCurrentWindow().startDragging();
     }
   },
 
@@ -178,33 +153,36 @@ export const mpvService = {
 
   async toggleFullscreen(): Promise<boolean> {
     if (isTauri()) {
-      return await invoke<boolean>("toggle_window_fullscreen");
+      const win = getCurrentWindow();
+      const next = !(await win.isFullscreen());
+      await win.setFullscreen(next);
+      return next;
     }
     return false;
   },
 
   async isFullscreen(): Promise<boolean> {
     if (isTauri()) {
-      return await invoke<boolean>("is_window_fullscreen");
+      return await getCurrentWindow().isFullscreen();
     }
     return false;
   },
 
   async minimize(): Promise<void> {
     if (isTauri()) {
-      await invoke("minimize_window");
+      await getCurrentWindow().minimize();
     }
   },
 
   async close(): Promise<void> {
     if (isTauri()) {
-      await invoke("close_window");
+      await getCurrentWindow().close();
     }
   },
 
   async setAlwaysOnTop(alwaysOnTop: boolean): Promise<void> {
     if (isTauri()) {
-      await invoke("set_window_always_on_top", { alwaysOnTop });
+      await getCurrentWindow().setAlwaysOnTop(alwaysOnTop);
     }
   },
 

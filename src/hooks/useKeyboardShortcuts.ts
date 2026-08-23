@@ -3,6 +3,7 @@ import { usePlayerStore } from "../stores/playerStore";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 import { isTauri, mpvService } from "../services/mpvService";
+import { t } from "../i18n";
 
 export function useKeyboardShortcuts() {
   const store = usePlayerStore();
@@ -62,13 +63,13 @@ export function useKeyboardShortcuts() {
         case "ArrowLeft":
           e.preventDefault();
           store.seek(e.shiftKey ? -1 : -5, true);
-          store.addToast("快退", e.shiftKey ? "1s" : "5s", "info");
+          store.addToast(t("controls.seekBackward"), e.shiftKey ? "1s" : "5s", "info");
           break;
 
         case "ArrowRight":
           e.preventDefault();
           store.seek(e.shiftKey ? 1 : 5, true);
-          store.addToast("快进", e.shiftKey ? "1s" : "5s", "info");
+          store.addToast(t("controls.seekForward"), e.shiftKey ? "1s" : "5s", "info");
           break;
 
         case "ArrowUp":
@@ -93,18 +94,8 @@ export function useKeyboardShortcuts() {
 
         case "Escape":
           e.preventDefault();
-          if (
-            store.isPlaylistOpen ||
-            store.isTrackPanelOpen ||
-            store.isSpeedPanelOpen ||
-            store.isVideoAdjustOpen ||
-            store.isSettingsOpen
-          ) {
-            store.togglePlaylist(false);
-            store.toggleTrackPanel(false);
-            store.toggleSpeedPanel(false);
-            store.toggleVideoAdjust(false);
-            store.toggleSettings(false);
+          if (store.activePanel) {
+            store.closeAllPanels();
           } else if (isTauri()) {
             const win = getCurrentWindow();
             if (await win.isFullscreen()) {
@@ -137,7 +128,7 @@ export function useKeyboardShortcuts() {
 
         case "KeyL": // Playlist
           e.preventDefault();
-          store.togglePlaylist();
+          store.togglePanel("playlist");
           break;
 
         case "KeyC": {
@@ -149,13 +140,13 @@ export function useKeyboardShortcuts() {
             const nextIdx = (currentIdx + 1) % (subTracks.length + 1);
             if (nextIdx === subTracks.length) {
               store.setTrack("sid", "no");
-              store.addToast("字幕", "已关闭字幕", "info");
+              store.addToast(t("tracks.subTitle"), t("tracks.offTrack"), "info");
             } else {
               const nextSub = subTracks[nextIdx];
               store.setTrack("sid", nextSub.id);
               store.addToast(
-                "字幕切换",
-                nextSub.title || nextSub.lang || `轨道 ${nextSub.id}`,
+                t("tracks.subTitle"),
+                nextSub.title || nextSub.lang || `Track #${nextSub.id}`,
                 "info"
               );
             }
@@ -173,8 +164,8 @@ export function useKeyboardShortcuts() {
             const nextAudio = audioTracks[nextIdx];
             store.setTrack("aid", nextAudio.id);
             store.addToast(
-              "音轨切换",
-              nextAudio.title || nextAudio.lang || `轨道 ${nextAudio.id}`,
+              t("tracks.audioTitle"),
+              nextAudio.title || nextAudio.lang || `Track #${nextAudio.id}`,
               "info"
             );
           }

@@ -6,8 +6,8 @@ import { NovidLogo } from "./NovidLogo";
 
 export const SettingsModal: React.FC = () => {
   const {
-    isSettingsOpen,
-    toggleSettings,
+    activePanel,
+    togglePanel,
     hwdec,
     hwdecCurrent,
     setHwdec,
@@ -22,7 +22,7 @@ export const SettingsModal: React.FC = () => {
     "general"
   );
 
-  if (!isSettingsOpen) return null;
+  if (activePanel !== "settings") return null;
 
   const handleHwdecChange = async (mode: string) => {
     await setHwdec(mode);
@@ -81,7 +81,7 @@ export const SettingsModal: React.FC = () => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs select-none animate-in fade-in duration-100"
-      onClick={() => toggleSettings(false)}
+      onClick={() => togglePanel("settings")}
     >
       <div
         className="relative max-w-lg w-full bg-[#0f141c]/95 border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-200 backdrop-blur-xl"
@@ -95,7 +95,7 @@ export const SettingsModal: React.FC = () => {
             </span>
           </div>
           <button
-            onClick={() => toggleSettings(false)}
+            onClick={() => togglePanel("settings")}
             title={t("common.close")}
             className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
           >
