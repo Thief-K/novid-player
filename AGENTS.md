@@ -65,7 +65,8 @@ novid-player/
 │       ├── lib.rs                  # App setup, window init, command registration
 │       ├── commands.rs             # Tauri command invocations dispatch center
 │       ├── mpv_ipc.rs              # Tokio named pipe client & event parser
-│       └── mpv_manager.rs          # MPV process lifecycle & binary lookup
+│       ├── mpv_manager.rs          # MPV process lifecycle & binary lookup
+│       └── thumbnail.rs            # Async frame extractor & session cache manager
 └── src/                            # Frontend UI (React 19 + TypeScript)
     ├── App.tsx                     # Main application layout & drag-and-drop listener
     ├── index.css                   # Global styles & Tailwind utilities
@@ -82,7 +83,7 @@ novid-player/
         ├── TitleBar.tsx            # Minimalist custom window title bar
         ├── WelcomeDropZone.tsx     # Idle state drag-and-drop welcome screen
         ├── FloatingControls.tsx    # Floating auto-hiding OSD playback controls
-        ├── ProgressBar.tsx         # Responsive seek bar with time hover preview
+        ├── ProgressBar.tsx         # Responsive seek bar with hover thumbnail preview
         ├── VolumeControl.tsx       # Volume slider with 150% boost capability
         ├── TrackPanel.tsx          # Audio track & subtitle drawer with delay sync
         ├── SpeedPanel.tsx          # Playback rate adjustment modal
@@ -194,6 +195,14 @@ cargo clippy
 
 - **Target vs Runtime State**: Separate the user's configured preference (`hwdec`) from the MPV runtime engine status (`hwdecCurrent`).
 - **Truthful UI**: If a user selects an unsupported hardware decoder (e.g. `NVDEC` on non-NVIDIA GPUs), MPV falls back to `hwdec-current: "no"`. The UI must detect this fallback, show a warning toast, and accurately update the selection rather than pretending it is active.
+
+### E. Video Thumbnail Preview & Cache Lifecycle
+
+- **Asynchronous Headless Extraction**: Thumbnails are extracted by a secondary headless MPV process (`--no-audio --frames=1 --hr-seek=no --vf=scale=320:-1 --vo=image`) protected by a `tokio::sync::Semaphore(2)` concurrency limiter.
+- **Dwell Delay & Continuous Scrubbing**: To prevent background process thrashing, the thumbnail card triggers only after dwelling on a scrubber timestamp for >= 300ms. Once activated, it stays open and smoothly updates across continuous scrubbing with a 60ms image debounce.
+- **Multi-Level Cache Management**:
+  - **Frontend LRU**: Retains up to 150 frames in memory Map for 0ms re-hover lookups.
+  - **Auto-Cleanup**: In-memory and disk temp folders (`%TEMP%/novidplayer_thumbs`) are wiped whenever a new video is loaded (`loadAndPlay`) or when the main window is destroyed (`WindowEvent::Destroyed`).
 
 ---
 
