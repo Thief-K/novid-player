@@ -206,14 +206,18 @@ export const usePlayerStore = create<PlayerState>()(
         const historyItem = get().history.find((h) => h.path === filePath);
         mpvService.cleanupThumbnails();
         await mpvService.loadFile(filePath);
+        await mpvService.setPause(false);
+        set({ paused: false, currentTime: 0, percentPos: 0, bufferPercent: 0 });
 
         if (
           historyItem &&
           historyItem.lastPosition > 5 &&
           historyItem.lastPosition < historyItem.duration - 10
         ) {
-          setTimeout(() => {
-            mpvService.seek(historyItem.lastPosition);
+          setTimeout(async () => {
+            await mpvService.seek(historyItem.lastPosition);
+            await mpvService.setPause(false);
+            set({ paused: false });
             get().addToast(
               t("toast.resumedPlayback"),
               t("toast.resumedTo", { time: formatTime(historyItem.lastPosition) }),
@@ -302,9 +306,9 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       togglePlayPause: async () => {
-        const isPaused = !get().paused;
-        set({ paused: isPaused });
-        await mpvService.playPause();
+        const nextPaused = !get().paused;
+        set({ paused: nextPaused });
+        await mpvService.setPause(nextPaused);
       },
 
       seek: async (seconds: number, relative = false) => {

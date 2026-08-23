@@ -41,6 +41,14 @@ export const mpvService = {
     }
   },
 
+  async setPause(pause: boolean): Promise<void> {
+    if (isTauri()) {
+      await invoke("set_pause", { pause });
+    } else {
+      console.log("[Mock MPV] Set Pause:", pause);
+    }
+  },
+
   async seek(seconds: number, relative = false): Promise<void> {
     if (isTauri()) {
       await invoke("seek", { seconds, relative });

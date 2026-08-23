@@ -61,6 +61,19 @@ pub async fn play_pause(manager: State<'_, MpvManager>) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn set_pause(manager: State<'_, MpvManager>, pause: bool) -> Result<(), String> {
+    manager
+        .send_command(vec![
+            Value::String("set_property".to_string()),
+            Value::String("pause".to_string()),
+            Value::Bool(pause),
+        ])
+        .await
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn seek(
     manager: State<'_, MpvManager>,
     seconds: f64,

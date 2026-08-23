@@ -28,6 +28,7 @@ pub fn run() {
             commands::mpv_set_property,
             commands::load_file,
             commands::play_pause,
+            commands::set_pause,
             commands::seek,
             commands::set_volume,
             commands::set_mute,
