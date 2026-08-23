@@ -227,6 +227,29 @@ export const mpvService = {
     }
   },
 
+  async getStartupPaths(): Promise<string[]> {
+    if (isTauri()) {
+      try {
+        return await invoke<string[]>("get_startup_paths");
+      } catch (err) {
+        console.warn("[MPV] Failed to get startup paths:", err);
+        return [];
+      }
+    }
+    return [];
+  },
+
+  listenOpenFiles(callback: (paths: string[]) => void): Promise<UnlistenFn> | (() => void) {
+    if (!isTauri()) {
+      return () => {};
+    }
+    return listen<string[]>("open-files", (event) => {
+      if (event.payload && event.payload.length > 0) {
+        callback(event.payload);
+      }
+    });
+  },
+
   listenEvents(callback: (payload: MpvEventPayload) => void): Promise<UnlistenFn> | (() => void) {
     if (!isTauri()) {
       return () => {};

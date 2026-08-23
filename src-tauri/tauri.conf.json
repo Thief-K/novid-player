@@ -38,6 +38,44 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["binaries/*"]
+    "resources": ["binaries/*"],
+    "windows": {
+      "nsis": {
+        "installerHooks": "installer_hooks.nsh"
+      }
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "mp4",
+          "mkv",
+          "avi",
+          "mov",
+          "wmv",
+          "flv",
+          "webm",
+          "m4v",
+          "ts",
+          "m2ts",
+          "rmvb",
+          "3gp",
+          "vob",
+          "ogv",
+          "mpg",
+          "mpeg"
+        ],
+        "name": "Video File",
+        "description": "Video file supported by NovidPlayer",
+        "role": "Viewer",
+        "mimeType": "video/*"
+      },
+      {
+        "ext": ["mp3", "flac", "wav", "aac", "ogg", "m4a", "wma", "opus"],
+        "name": "Audio File",
+        "description": "Audio file supported by NovidPlayer",
+        "role": "Viewer",
+        "mimeType": "audio/*"
+      }
+    ]
   }
 }

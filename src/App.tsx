@@ -14,7 +14,8 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useTranslation } from "./i18n";
 
 export const App: React.FC = () => {
-  const store = usePlayerStore();
+  const currentPath = usePlayerStore((s) => s.currentPath);
+  const isControlVisible = usePlayerStore((s) => s.isControlVisible);
   const { t } = useTranslation();
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -28,59 +29,60 @@ export const App: React.FC = () => {
   // Bind global keyboard shortcuts
   useKeyboardShortcuts();
 
-  const handleDroppedPaths = useCallback(
-    (paths: string[]) => {
-      const videoExts = ["mp4", "mkv", "avi", "mov", "flv", "ts", "webm", "wmv", "m4v"];
-      const subExts = ["srt", "ass", "ssa", "vtt", "sub"];
-      const audioExts = ["mp3", "flac", "wav", "aac", "ogg", "m4a"];
+  const handleDroppedPaths = useCallback((paths: string[]) => {
+    const videoExts = ["mp4", "mkv", "avi", "mov", "flv", "ts", "webm", "wmv", "m4v"];
+    const subExts = ["srt", "ass", "ssa", "vtt", "sub"];
+    const audioExts = ["mp3", "flac", "wav", "aac", "ogg", "m4a"];
 
-      const videos: string[] = [];
-      const subtitles: string[] = [];
-      const audios: string[] = [];
+    const videos: string[] = [];
+    const subtitles: string[] = [];
+    const audios: string[] = [];
 
-      for (const p of paths) {
-        const ext = p.split(".").pop()?.toLowerCase() || "";
-        if (videoExts.includes(ext)) {
-          videos.push(p);
-        } else if (subExts.includes(ext)) {
-          subtitles.push(p);
-        } else if (audioExts.includes(ext)) {
-          audios.push(p);
-        }
+    for (const p of paths) {
+      const ext = p.split(".").pop()?.toLowerCase() || "";
+      if (videoExts.includes(ext)) {
+        videos.push(p);
+      } else if (subExts.includes(ext)) {
+        subtitles.push(p);
+      } else if (audioExts.includes(ext)) {
+        audios.push(p);
       }
+    }
 
-      if (videos.length > 0) {
-        // Play first video and queue the rest
-        store.loadAndPlay(videos[0]);
-        if (videos.length > 1) {
-          store.addToPlaylist(videos.slice(1).map((path) => ({ path })));
-        }
+    const state = usePlayerStore.getState();
+    if (videos.length > 0) {
+      // Play first video and queue the rest
+      state.loadAndPlay(videos[0]);
+      if (videos.length > 1) {
+        state.addToPlaylist(videos.slice(1).map((path) => ({ path })));
       }
+    }
 
-      if (subtitles.length > 0) {
-        for (const sub of subtitles) {
-          store.loadSubtitleFile(sub);
-        }
+    if (subtitles.length > 0) {
+      for (const sub of subtitles) {
+        state.loadSubtitleFile(sub);
       }
+    }
 
-      if (audios.length > 0 && videos.length === 0) {
-        if (store.currentPath) {
-          for (const aud of audios) {
-            store.loadAudioFile(aud);
-          }
-        } else {
-          store.loadAndPlay(audios[0]);
+    if (audios.length > 0 && videos.length === 0) {
+      if (state.currentPath) {
+        for (const aud of audios) {
+          state.loadAudioFile(aud);
         }
+      } else {
+        state.loadAndPlay(audios[0]);
       }
-    },
-    [store]
-  );
+    }
+  }, []);
 
-  // Listen to MPV IPC Events
+  // Listen to MPV IPC Events and Application Launch Files
   useEffect(() => {
-    let unlisten: any = null;
+    let unlistenMpv: any = null;
+    let unlistenOpenFiles: any = null;
+    let unlistenDragDrop: any = null;
+
     const init = async () => {
-      unlisten = await mpvService.listenEvents((payload) => {
+      unlistenMpv = await mpvService.listenEvents((payload) => {
         usePlayerStore.getState().handleMpvEvent(payload);
       });
 
@@ -95,62 +97,69 @@ export const App: React.FC = () => {
           await mpvService.sendRawCommand(["set_property", "hwdec", hwdec]);
         }
         usePlayerStore.setState({ isMpvReady: true });
+
+        // Check for startup files passed via CLI / Open With (Cold Start)
+        try {
+          const startupPaths = await mpvService.getStartupPaths();
+          if (startupPaths && startupPaths.length > 0) {
+            handleDroppedPaths(startupPaths);
+          }
+        } catch (e) {
+          console.warn("Failed to get startup paths:", e);
+        }
       }
-    };
-    init();
 
-    return () => {
-      if (typeof unlisten === "function") {
-        unlisten();
-      }
-    };
-  }, []);
-
-  // Listen to Tauri Drag & Drop files
-  useEffect(() => {
-    if (!isTauri()) return;
-    const win = getCurrentWindow();
-    let unlistenDragDrop: any = null;
-
-    const setupDrag = async () => {
-      unlistenDragDrop = await win.onDragDropEvent((event) => {
-        if (event.payload.type === "enter" || event.payload.type === "over") {
-          setIsDragOver(true);
-        } else if (event.payload.type === "drop") {
-          setIsDragOver(false);
-          const paths = event.payload.paths;
+      if (isTauri()) {
+        // Listen to single instance open-files events (Hot Start)
+        unlistenOpenFiles = await mpvService.listenOpenFiles((paths) => {
           if (paths && paths.length > 0) {
             handleDroppedPaths(paths);
           }
-        } else if (event.payload.type === "leave") {
-          setIsDragOver(false);
-        }
-      });
+        });
+
+        // Listen to native window drag and drop events
+        const win = getCurrentWindow();
+        unlistenDragDrop = await win.onDragDropEvent((event) => {
+          if (event.payload.type === "enter" || event.payload.type === "over") {
+            setIsDragOver(true);
+          } else if (event.payload.type === "drop") {
+            setIsDragOver(false);
+            const paths = event.payload.paths;
+            if (paths && paths.length > 0) {
+              handleDroppedPaths(paths);
+            }
+          } else if (event.payload.type === "leave") {
+            setIsDragOver(false);
+          }
+        });
+      }
     };
-    setupDrag();
+
+    init();
 
     return () => {
-      if (typeof unlistenDragDrop === "function") {
-        unlistenDragDrop();
-      }
+      if (typeof unlistenMpv === "function") unlistenMpv();
+      if (typeof unlistenOpenFiles === "function") unlistenOpenFiles();
+      if (typeof unlistenDragDrop === "function") unlistenDragDrop();
     };
   }, [handleDroppedPaths]);
 
   // Mouse activity timer to hide controls after 2s inactivity
   const handleMouseMove = useCallback(() => {
-    store.setControlVisible(true);
+    const state = usePlayerStore.getState();
+    state.setControlVisible(true);
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
     }
     // Only auto hide if video is loaded and not paused
-    if (store.currentPath && !store.paused) {
+    if (state.currentPath && !state.paused) {
       hideTimerRef.current = setTimeout(() => {
-        if (!store.activePanel) {
-          store.setControlVisible(false);
+        if (!usePlayerStore.getState().activePanel) {
+          usePlayerStore.getState().setControlVisible(false);
         }
       }, 2000);
     }
-  }, [store]);
+  }, []);
 
   // Video viewport click & double click
   const handleViewportClick = (e: React.MouseEvent) => {
@@ -168,8 +177,9 @@ export const App: React.FC = () => {
       // Single click -> Toggle Play/Pause after short debounce
       clickTimerRef.current = setTimeout(() => {
         clickTimerRef.current = null;
-        if (store.currentPath) {
-          store.togglePlayPause();
+        const state = usePlayerStore.getState();
+        if (state.currentPath) {
+          state.togglePlayPause();
         }
       }, 250);
     }
@@ -177,7 +187,7 @@ export const App: React.FC = () => {
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (store.currentPath) {
+    if (usePlayerStore.getState().currentPath) {
       setContextMenu({ isOpen: true, x: e.clientX, y: e.clientY });
     }
   };
@@ -186,7 +196,7 @@ export const App: React.FC = () => {
     <div
       onMouseMove={handleMouseMove}
       className="fixed inset-0 w-full h-full overflow-hidden select-none bg-transparent text-slate-100"
-      style={{ cursor: store.isControlVisible || !store.currentPath ? "default" : "none" }}
+      style={{ cursor: isControlVisible || !currentPath ? "default" : "none" }}
     >
       {/* Title Bar */}
       <TitleBar />
@@ -199,7 +209,7 @@ export const App: React.FC = () => {
       />
 
       {/* Welcome Screen when no video is loaded */}
-      {!store.currentPath && <WelcomeDropZone />}
+      {!currentPath && <WelcomeDropZone />}
 
       {/* Right-click Context Menu */}
       <ContextMenu

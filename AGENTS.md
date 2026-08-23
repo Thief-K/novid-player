@@ -58,6 +58,7 @@ novid-player/
 ├── src-tauri/                      # Tauri v2 Backend (Rust)
 │   ├── Cargo.toml                  # Rust dependencies & compilation profile
 │   ├── tauri.conf.json             # Tauri window, security, and bundle config
+│   ├── installer_hooks.nsh         # NSIS installer hooks for Windows registry associations
 │   ├── capabilities/
 │   │   └── default.json            # Tauri v2 security capabilities and permissions
 │   └── src/
@@ -242,6 +243,19 @@ cargo clippy
 - **Enforced Video Load Synchronization**:
   - In `loadAndPlay`, `setVolume` and `setMute` are explicitly re-asserted immediately after `loadFile` to prevent audio bursts when opening videos in muted state.
   - Volume slider adjustments to `0%` automatically engage `mute: true`, and adjusting above `0%` while muted automatically disengages `mute: false`.
+
+### I. Windows File Association, CLI Arguments & Single-Instance Lifecycle
+
+- **Installer File Associations**:
+  - `tauri.conf.json` declares `bundle.fileAssociations` for all supported video and audio formats.
+  - `installer_hooks.nsh` hooks into NSIS installation (`NSIS_HOOK_POSTINSTALL`) to register `HKCU\Software\Classes\Applications\NovidPlayer.exe` (`SupportedTypes`, `shell\open\command`), `SystemFileAssociations\video\OpenWithList`, and `RegisteredApplications` for immediate "Open with" (打开方式) visibility in Windows Explorer.
+- **Cold Start Protection (Single-Use CLI Args)**:
+  - When the app is launched via "Open with" or command-line args, Rust parses `std::env::args()` via `get_startup_paths`.
+  - `get_startup_paths` uses `std::sync::atomic::AtomicBool` to ensure args are consumed strictly once upon launch, preventing accidental infinite reload loops during frontend lifecycle re-evaluations.
+- **Hot Start Interception**:
+  - `tauri-plugin-single-instance` intercepts secondary process launches while the app is already running, brings the main window to front (`unminimize`, `set_focus`), and emits the `open-files` event to the frontend for seamless instant playback.
+- **Store Subscription Discipline**:
+  - Top-level components (e.g. `App.tsx`) must never subscribe to the entire Zustand store object via bare `usePlayerStore()`. High-frequency updates (`time-pos` / `currentTime`) will cause high-frequency re-renders. Always use selector hooks (e.g. `usePlayerStore((s) => s.currentPath)`) and access action functions via `usePlayerStore.getState()`.
 
 ---
 

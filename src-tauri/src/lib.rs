@@ -4,7 +4,7 @@ pub mod mpv_manager;
 pub mod thumbnail;
 
 use mpv_manager::MpvManager;
-use tauri::{Manager, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 use thumbnail::ThumbnailManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,6 +17,18 @@ pub fn run() {
     let thumbnail_clone = thumbnail_manager.clone();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+            log::info!("Single instance launch detected. Args: {:?}, Cwd: {:?}", args, cwd);
+            let files = commands::parse_cli_files(&args, Some(&cwd));
+            if !files.is_empty() {
+                let _ = app.emit("open-files", files);
+            }
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .manage(mpv_manager)
         .manage(thumbnail_manager)
@@ -30,6 +42,7 @@ pub fn run() {
             commands::cleanup_thumbnails,
             commands::toggle_window_maximize,
             commands::auto_fit_window,
+            commands::get_startup_paths,
         ])
         .setup(move |app| {
             let window = app.get_webview_window("main").expect("Failed to get main window");

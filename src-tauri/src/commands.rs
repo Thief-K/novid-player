@@ -215,3 +215,57 @@ pub async fn auto_fit_window(
 
     Ok(())
 }
+
+pub fn parse_cli_files(args: &[String], cwd: Option<&str>) -> Vec<String> {
+    let mut files = Vec::new();
+    for arg in args.iter().skip(1) {
+        if arg.starts_with('-') || arg.starts_with("--") {
+            continue;
+        }
+        let clean_arg = arg.trim_matches('"').trim_matches('\'');
+        if clean_arg.is_empty() {
+            continue;
+        }
+        let path = std::path::Path::new(clean_arg);
+        let resolved = if path.is_absolute() {
+            path.to_path_buf()
+        } else if let Some(cwd_str) = cwd {
+            std::path::Path::new(cwd_str).join(path)
+        } else if let Ok(current_dir) = std::env::current_dir() {
+            current_dir.join(path)
+        } else {
+            path.to_path_buf()
+        };
+
+        if resolved.exists() {
+            files.push(resolved.to_string_lossy().to_string());
+        } else {
+            let ext = resolved
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("")
+                .to_lowercase();
+            let media_exts = [
+                "mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v", "ts", "m2ts", "rmvb",
+                "3gp", "vob", "ogv", "mpg", "mpeg", "mp3", "flac", "wav", "aac", "ogg", "m4a",
+                "wma", "opus", "srt", "ass", "ssa", "vtt", "sub",
+            ];
+            if media_exts.contains(&ext.as_str()) {
+                files.push(resolved.to_string_lossy().to_string());
+            }
+        }
+    }
+    files
+}
+
+static STARTUP_PATHS_CONSUMED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+#[tauri::command]
+pub fn get_startup_paths() -> Vec<String> {
+    if STARTUP_PATHS_CONSUMED.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return Vec::new();
+    }
+    let args: Vec<String> = std::env::args().collect();
+    parse_cli_files(&args, None)
+}

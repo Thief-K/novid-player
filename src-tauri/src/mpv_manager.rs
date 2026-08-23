@@ -137,11 +137,16 @@ impl MpvManager {
         &self,
         args: Vec<Value>,
     ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
-        let client_opt = self.ipc.read().clone();
-        if let Some(client) = client_opt {
-            client.send_command(args).await
-        } else {
-            Err("MPV IPC client is not connected".into())
+        let start_time = std::time::Instant::now();
+        loop {
+            let client_opt = self.ipc.read().clone();
+            if let Some(client) = client_opt {
+                return client.send_command(args).await;
+            }
+            if start_time.elapsed() > std::time::Duration::from_secs(3) {
+                return Err("MPV IPC client is not connected".into());
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
         }
     }
 }
