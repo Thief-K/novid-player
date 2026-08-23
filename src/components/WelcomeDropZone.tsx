@@ -5,9 +5,11 @@ import { usePlayerStore } from "../stores/playerStore";
 import { isTauri, mpvService } from "../services/mpvService";
 import { NovidLogo } from "./NovidLogo";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useTranslation } from "../i18n";
 
 export const WelcomeDropZone: React.FC = () => {
   const { loadAndPlay } = usePlayerStore();
+  const { t } = useTranslation();
 
   const handleDragMouseDown = async (e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -31,7 +33,7 @@ export const WelcomeDropZone: React.FC = () => {
           multiple: false,
           filters: [
             {
-              name: "视频与媒体文件",
+              name: t("welcome.openFile"),
               extensions: [
                 "mp4",
                 "mkv",
@@ -77,7 +79,7 @@ export const WelcomeDropZone: React.FC = () => {
       <div className="relative z-10 flex flex-col items-center">
         <button
           onClick={handleOpenFile}
-          title="打开视频文件 (Ctrl+O) 或直接拖入"
+          title={`${t("welcome.openFile")} (Ctrl+O)`}
           className="group relative flex items-center justify-center p-7 rounded-3xl border border-slate-700/40 bg-slate-900/30 hover:border-sky-500/50 hover:bg-slate-900/60 transition-all duration-300 shadow-2xl hover:shadow-[0_0_40px_rgba(56,189,248,0.25)] active:scale-95 cursor-pointer backdrop-blur-xl"
         >
           {/* Glowing NovidLogo with subtle FolderOpen badge */}

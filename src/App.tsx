@@ -11,8 +11,11 @@ import { ToastContainer } from "./components/Toast";
 import { ContextMenu } from "./components/ContextMenu";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
+import { useTranslation } from "./i18n";
+
 export const App: React.FC = () => {
   const store = usePlayerStore();
+  const { t } = useTranslation();
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -204,7 +207,7 @@ export const App: React.FC = () => {
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-sky-950/80 backdrop-blur-md border-4 border-dashed border-sky-400 pointer-events-none animate-in fade-in duration-150">
           <div className="text-center">
             <div className="text-4xl mb-2">📂</div>
-            <div className="text-xl font-bold text-sky-200">松开鼠标即刻导入视频与字幕</div>
+            <div className="text-xl font-bold text-sky-200">{t("welcome.dropHint")}</div>
           </div>
         </div>
       )}

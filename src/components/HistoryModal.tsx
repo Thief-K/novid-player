@@ -1,6 +1,7 @@
 import React from "react";
 import { usePlayerStore } from "../stores/playerStore";
 import { Trash2, X, Play } from "lucide-react";
+import { useTranslation } from "../i18n";
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface HistoryModalProps {
 
 export const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) => {
   const { history, clearHistory, loadAndPlay } = usePlayerStore();
+  const { t } = useTranslation();
 
   if (!isOpen) return null;
 
@@ -30,12 +32,12 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) =
       >
         {/* Minimal Header */}
         <div className="flex items-center justify-between px-1 pb-2 mb-1.5 border-b border-slate-800/80">
-          <span className="text-xs font-semibold text-slate-300">播放历史</span>
+          <span className="text-xs font-semibold text-slate-300">{t("history.title")}</span>
           <div className="flex items-center gap-1">
             {history.length > 0 && (
               <button
                 onClick={clearHistory}
-                title="清空历史"
+                title={t("history.clearAll")}
                 className="p-1 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -43,7 +45,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) =
             )}
             <button
               onClick={onClose}
-              title="关闭"
+              title={t("common.close")}
               className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"
             >
               <X className="w-3.5 h-3.5" />
@@ -54,7 +56,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) =
         {/* History List */}
         <div className="max-h-64 overflow-y-auto space-y-0.5 pr-0.5">
           {history.length === 0 ? (
-            <div className="py-8 text-center text-slate-500 text-xs">暂无历史记录</div>
+            <div className="py-8 text-center text-slate-500 text-xs">{t("history.empty")}</div>
           ) : (
             history.map((item) => (
               <div

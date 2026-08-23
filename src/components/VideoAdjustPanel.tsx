@@ -1,12 +1,14 @@
 import React from "react";
 import { usePlayerStore } from "../stores/playerStore";
 import { Sliders, RotateCcw, Monitor, Sun, Contrast, Palette } from "lucide-react";
+import { useTranslation } from "../i18n";
 
 export const VideoAdjustPanel: React.FC = () => {
   const { videoAdjust, setVideoAdjust, resetVideoAdjust, setAspectRatio } = usePlayerStore();
+  const { t } = useTranslation();
 
   const aspectRatios = [
-    { label: "原始", value: "original" },
+    { label: t("videoAdjust.aspectAuto"), value: "original" },
     { label: "16:9", value: "16:9" },
     { label: "4:3", value: "4:3" },
     { label: "21:9", value: "21:9" },
@@ -18,14 +20,14 @@ export const VideoAdjustPanel: React.FC = () => {
       <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-sky-400">
           <Sliders className="w-3.5 h-3.5" />
-          <span>画面与色彩调节</span>
+          <span>{t("videoAdjust.title")}</span>
         </div>
         <button
           onClick={resetVideoAdjust}
           className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-sky-300 transition-colors"
         >
           <RotateCcw className="w-2.5 h-2.5" />
-          <span>重置默认</span>
+          <span>{t("videoAdjust.reset")}</span>
         </button>
       </div>
 
@@ -33,7 +35,7 @@ export const VideoAdjustPanel: React.FC = () => {
       <div className="mb-3.5">
         <div className="flex items-center gap-1 text-[11px] text-slate-400 mb-1.5">
           <Monitor className="w-3 h-3 text-sky-400" />
-          <span>画面比例强制</span>
+          <span>{t("videoAdjust.aspectRatio")}</span>
         </div>
         <div className="grid grid-cols-5 gap-1">
           {aspectRatios.map((ratio) => {
@@ -62,7 +64,7 @@ export const VideoAdjustPanel: React.FC = () => {
           <div className="flex justify-between text-[11px] text-slate-300 mb-1">
             <span className="flex items-center gap-1">
               <Sun className="w-3 h-3 text-amber-400" />
-              <span>亮度</span>
+              <span>{t("videoAdjust.brightness")}</span>
             </span>
             <span className="font-mono text-slate-400">{videoAdjust.brightness}</span>
           </div>
@@ -81,7 +83,7 @@ export const VideoAdjustPanel: React.FC = () => {
           <div className="flex justify-between text-[11px] text-slate-300 mb-1">
             <span className="flex items-center gap-1">
               <Contrast className="w-3 h-3 text-indigo-400" />
-              <span>对比度</span>
+              <span>{t("videoAdjust.contrast")}</span>
             </span>
             <span className="font-mono text-slate-400">{videoAdjust.contrast}</span>
           </div>
@@ -100,7 +102,7 @@ export const VideoAdjustPanel: React.FC = () => {
           <div className="flex justify-between text-[11px] text-slate-300 mb-1">
             <span className="flex items-center gap-1">
               <Palette className="w-3 h-3 text-rose-400" />
-              <span>饱和度</span>
+              <span>{t("videoAdjust.saturation")}</span>
             </span>
             <span className="font-mono text-slate-400">{videoAdjust.saturation}</span>
           </div>
@@ -117,7 +119,7 @@ export const VideoAdjustPanel: React.FC = () => {
         {/* Gamma */}
         <div>
           <div className="flex justify-between text-[11px] text-slate-300 mb-1">
-            <span>伽马值 (Gamma)</span>
+            <span>{t("videoAdjust.gamma")}</span>
             <span className="font-mono text-slate-400">{videoAdjust.gamma}</span>
           </div>
           <input

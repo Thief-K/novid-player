@@ -22,6 +22,8 @@ import { VideoAdjustPanel } from "./VideoAdjustPanel";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { isTauri, mpvService } from "../services/mpvService";
 
+import { useTranslation } from "../i18n";
+
 export const FloatingControls: React.FC = () => {
   const {
     paused,
@@ -44,6 +46,7 @@ export const FloatingControls: React.FC = () => {
     toggleVideoAdjust,
     togglePlaylist,
   } = usePlayerStore();
+  const { t } = useTranslation();
 
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
@@ -65,8 +68,9 @@ export const FloatingControls: React.FC = () => {
   }, []);
 
   const handleToggleFullscreen = async () => {
-    const next = await mpvService.toggleFullscreen();
-    setIsFullscreen(next);
+    if (isTauri()) {
+      await mpvService.toggleFullscreen();
+    }
   };
 
   const formatTime = (seconds: number): string => {
@@ -84,9 +88,9 @@ export const FloatingControls: React.FC = () => {
 
   return (
     <>
-      {/* Floating Menus */}
-      {isSpeedPanelOpen && <SpeedPanel />}
+      {/* Floating Panel Drawers */}
       {isTrackPanelOpen && <TrackPanel />}
+      {isSpeedPanelOpen && <SpeedPanel />}
       {isVideoAdjustOpen && <VideoAdjustPanel />}
 
       {/* Main Bottom Control Bar */}
@@ -108,7 +112,7 @@ export const FloatingControls: React.FC = () => {
               {/* Previous in playlist */}
               <button
                 onClick={playPrev}
-                title="上一首"
+                title={t("controls.prev")}
                 className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
               >
                 <SkipBack className="w-4 h-4" />
@@ -117,7 +121,7 @@ export const FloatingControls: React.FC = () => {
               {/* Seek -5s */}
               <button
                 onClick={() => seek(-5, true)}
-                title="快退 5 秒 (Left Arrow)"
+                title={t("controls.seekBackward")}
                 className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -126,7 +130,7 @@ export const FloatingControls: React.FC = () => {
               {/* Play / Pause Toggle */}
               <button
                 onClick={togglePlayPause}
-                title={paused ? "播放 (Space)" : "暂停 (Space)"}
+                title={paused ? t("controls.play") : t("controls.pause")}
                 className="p-2.5 mx-1 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 active:scale-95 transition-all"
               >
                 {paused ? (
@@ -139,7 +143,7 @@ export const FloatingControls: React.FC = () => {
               {/* Seek +10s */}
               <button
                 onClick={() => seek(10, true)}
-                title="快进 10 秒 (Right Arrow)"
+                title={t("controls.seekForward")}
                 className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
               >
                 <RotateCw className="w-4 h-4" />
@@ -148,7 +152,7 @@ export const FloatingControls: React.FC = () => {
               {/* Next in playlist */}
               <button
                 onClick={playNext}
-                title="下一首"
+                title={t("controls.next")}
                 className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
               >
                 <SkipForward className="w-4 h-4" />
@@ -172,7 +176,7 @@ export const FloatingControls: React.FC = () => {
               {/* Screenshot */}
               <button
                 onClick={() => takeScreenshot(true)}
-                title="截取高清画面 (S)"
+                title={t("settings.hotkeyScreenshot")}
                 className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
               >
                 <Camera className="w-4 h-4" />
@@ -181,7 +185,7 @@ export const FloatingControls: React.FC = () => {
               {/* Speed Toggle Pill */}
               <button
                 onClick={() => toggleSpeedPanel()}
-                title="播放倍速"
+                title={t("controls.speed")}
                 className={`px-2.5 py-1 text-xs font-mono font-medium rounded-lg border transition-all ${
                   isSpeedPanelOpen || speed !== 1.0
                     ? "bg-sky-500/20 text-sky-300 border-sky-500/40"
@@ -194,7 +198,7 @@ export const FloatingControls: React.FC = () => {
               {/* Track / Subtitles */}
               <button
                 onClick={() => toggleTrackPanel()}
-                title="字幕与音轨 (C/V)"
+                title={t("controls.tracks")}
                 className={`p-2 rounded-xl transition-colors ${
                   isTrackPanelOpen
                     ? "bg-sky-500/20 text-sky-300"
@@ -207,7 +211,7 @@ export const FloatingControls: React.FC = () => {
               {/* Video Color & Ratio Adjust */}
               <button
                 onClick={() => toggleVideoAdjust()}
-                title="色彩与比例调节"
+                title={t("controls.videoAdjust")}
                 className={`p-2 rounded-xl transition-colors ${
                   isVideoAdjustOpen
                     ? "bg-sky-500/20 text-sky-300"
@@ -220,7 +224,7 @@ export const FloatingControls: React.FC = () => {
               {/* Playlist Drawer Toggle */}
               <button
                 onClick={() => togglePlaylist()}
-                title="播放列表 (L)"
+                title={t("controls.playlist")}
                 className={`p-2 rounded-xl transition-colors ${
                   isPlaylistOpen
                     ? "bg-sky-500/20 text-sky-300"
@@ -233,7 +237,7 @@ export const FloatingControls: React.FC = () => {
               {/* Fullscreen Toggle */}
               <button
                 onClick={handleToggleFullscreen}
-                title={isFullscreen ? "退出全屏 (F / Esc)" : "进入全屏 (F)"}
+                title={isFullscreen ? t("controls.exitFullscreen") : t("controls.fullscreen")}
                 className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
               >
                 {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}

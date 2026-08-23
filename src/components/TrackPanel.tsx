@@ -3,6 +3,7 @@ import { usePlayerStore } from "../stores/playerStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Subtitles, Mic, Plus, Check, Clock, RotateCcw } from "lucide-react";
 import { isTauri } from "../services/mpvService";
+import { useTranslation } from "../i18n";
 
 export const TrackPanel: React.FC = () => {
   const {
@@ -17,6 +18,7 @@ export const TrackPanel: React.FC = () => {
     adjustSubDelay,
     adjustAudioDelay,
   } = usePlayerStore();
+  const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<"sub" | "audio">("sub");
 
@@ -30,7 +32,7 @@ export const TrackPanel: React.FC = () => {
           multiple: false,
           filters: [
             {
-              name: "字幕文件",
+              name: t("tracks.loadExternalSub"),
               extensions: ["srt", "ass", "ssa", "vtt", "sub"],
             },
           ],
@@ -51,7 +53,7 @@ export const TrackPanel: React.FC = () => {
           multiple: false,
           filters: [
             {
-              name: "音频文件",
+              name: t("tracks.loadExternalAudio"),
               extensions: ["mp3", "flac", "wav", "aac", "m4a", "ac3", "dts", "ogg"],
             },
           ],
@@ -78,7 +80,9 @@ export const TrackPanel: React.FC = () => {
           }`}
         >
           <Subtitles className="w-3.5 h-3.5" />
-          <span>字幕设置 ({subTracks.length})</span>
+          <span>
+            {t("tracks.subTitle")} ({subTracks.length})
+          </span>
         </button>
         <button
           onClick={() => setActiveTab("audio")}
@@ -89,7 +93,9 @@ export const TrackPanel: React.FC = () => {
           }`}
         >
           <Mic className="w-3.5 h-3.5" />
-          <span>音轨选择 ({audioTracks.length})</span>
+          <span>
+            {t("tracks.audioTitle")} ({audioTracks.length})
+          </span>
         </button>
       </div>
 
@@ -106,7 +112,7 @@ export const TrackPanel: React.FC = () => {
                   : "bg-slate-800/40 hover:bg-slate-800/80 text-slate-300"
               }`}
             >
-              <span>关闭字幕</span>
+              <span>{t("tracks.offTrack")}</span>
               {(selectedSubTrack === "no" || selectedSubTrack === null) && (
                 <Check className="w-3.5 h-3.5 text-sky-400" />
               )}
@@ -128,11 +134,14 @@ export const TrackPanel: React.FC = () => {
                     <div className="truncate font-medium">
                       {sub.title ||
                         sub["external-filename"]?.split(/[/\\]/).pop() ||
-                        `字幕轨 #${sub.id}`}
+                        `Track #${sub.id}`}
                     </div>
                     <div className="text-[10px] text-slate-400">
                       {sub.lang ? `[${sub.lang.toUpperCase()}] ` : ""}
-                      {sub.codec || ""} {sub.external ? "(外挂)" : "(内置)"}
+                      {sub.codec || ""}{" "}
+                      {sub.external
+                        ? `(${t("tracks.trackExternal")})`
+                        : `(${t("tracks.trackDefault")})`}
                     </div>
                   </div>
                   {isSelected && <Check className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />}
@@ -147,7 +156,7 @@ export const TrackPanel: React.FC = () => {
             className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-xs text-sky-300 hover:text-sky-200 transition-all shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>载入外挂字幕 (.srt / .ass)</span>
+            <span>{t("tracks.loadExternalSub")}</span>
           </button>
 
           {/* Subtitle Delay Calibration */}
@@ -155,7 +164,7 @@ export const TrackPanel: React.FC = () => {
             <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3 text-sky-400" />
-                <span>字幕时间轴微调</span>
+                <span>{t("tracks.subDelay")}</span>
               </span>
               <span className="font-mono text-sky-400 font-semibold">
                 {subDelay > 0 ? `+${subDelay.toFixed(1)}s` : `${subDelay.toFixed(1)}s`}
@@ -177,7 +186,7 @@ export const TrackPanel: React.FC = () => {
               <button
                 onClick={() => adjustSubDelay(-subDelay)}
                 className="py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] flex items-center justify-center text-slate-400 hover:text-white"
-                title="复位"
+                title={t("common.reset")}
               >
                 <RotateCcw className="w-2.5 h-2.5" />
               </button>
@@ -215,11 +224,13 @@ export const TrackPanel: React.FC = () => {
                   }`}
                 >
                   <div className="overflow-hidden pr-2">
-                    <div className="truncate font-medium">{audio.title || `音轨 #${audio.id}`}</div>
+                    <div className="truncate font-medium">
+                      {audio.title || `Track #${audio.id}`}
+                    </div>
                     <div className="text-[10px] text-slate-400">
                       {audio.lang ? `[${audio.lang.toUpperCase()}] ` : ""}
                       {audio.codec || ""}
-                      {audio["audio-channels"] ? ` • ${audio["audio-channels"]} 声道` : ""}
+                      {audio["audio-channels"] ? ` • ${audio["audio-channels"]}ch` : ""}
                     </div>
                   </div>
                   {isSelected && <Check className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />}
@@ -233,7 +244,7 @@ export const TrackPanel: React.FC = () => {
             className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-xs text-sky-300 hover:text-sky-200 transition-all shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>载入外挂音轨</span>
+            <span>{t("tracks.loadExternalAudio")}</span>
           </button>
 
           {/* Audio Delay */}
@@ -241,7 +252,7 @@ export const TrackPanel: React.FC = () => {
             <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3 text-sky-400" />
-                <span>音频同步校准</span>
+                <span>{t("tracks.audioDelay")}</span>
               </span>
               <span className="font-mono text-sky-400 font-semibold">
                 {audioDelay > 0 ? `+${audioDelay.toFixed(1)}s` : `${audioDelay.toFixed(1)}s`}
@@ -263,7 +274,7 @@ export const TrackPanel: React.FC = () => {
               <button
                 onClick={() => adjustAudioDelay(-audioDelay)}
                 className="py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] flex items-center justify-center text-slate-400 hover:text-white"
-                title="复位"
+                title={t("common.reset")}
               >
                 <RotateCcw className="w-2.5 h-2.5" />
               </button>

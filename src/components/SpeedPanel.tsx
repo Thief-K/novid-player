@@ -1,9 +1,11 @@
 import React from "react";
 import { usePlayerStore } from "../stores/playerStore";
 import { Gauge, RotateCcw } from "lucide-react";
+import { useTranslation } from "../i18n";
 
 export const SpeedPanel: React.FC = () => {
   const { speed, setSpeed } = usePlayerStore();
+  const { t } = useTranslation();
   const presets = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0];
 
   return (
@@ -11,14 +13,14 @@ export const SpeedPanel: React.FC = () => {
       <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-800">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-sky-400">
           <Gauge className="w-3.5 h-3.5" />
-          <span>倍速调节</span>
+          <span>{t("speed.title")}</span>
         </div>
         <button
           onClick={() => setSpeed(1.0)}
           className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-sky-300 transition-colors"
         >
           <RotateCcw className="w-2.5 h-2.5" />
-          <span>重置 1.0x</span>
+          <span>{t("speed.reset")}</span>
         </button>
       </div>
 

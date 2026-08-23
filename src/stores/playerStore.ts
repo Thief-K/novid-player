@@ -8,6 +8,7 @@ import {
   VideoAdjustments,
 } from "../types/player";
 import { mpvService, MpvEventPayload } from "../services/mpvService";
+import { t } from "../i18n";
 
 const DEFAULT_VIDEO_ADJUST: VideoAdjustments = {
   brightness: 0,
@@ -47,6 +48,7 @@ interface PlayerState {
   isSettingsOpen: boolean;
   isPinned: boolean;
   isFullscreen: boolean;
+  language: "auto" | "zh-CN" | "en-US";
 
   // Playlists and history
   playlist: PlaylistItem[];
@@ -55,6 +57,7 @@ interface PlayerState {
   toasts: ToastMessage[];
 
   // Actions
+  setLanguage: (lang: "auto" | "zh-CN" | "en-US") => void;
   setControlVisible: (visible: boolean) => void;
   togglePlaylist: (open?: boolean) => void;
   toggleTrackPanel: (open?: boolean) => void;
@@ -128,12 +131,14 @@ export const usePlayerStore = create<PlayerState>()(
       isSettingsOpen: false,
       isPinned: false,
       isFullscreen: false,
+      language: "auto",
 
       playlist: [],
       currentPlayingIndex: -1,
       history: [],
       toasts: [],
 
+      setLanguage: (lang) => set({ language: lang }),
       setControlVisible: (visible) => set({ isControlVisible: visible }),
       togglePlaylist: (open) =>
         set((state) => ({
@@ -210,8 +215,8 @@ export const usePlayerStore = create<PlayerState>()(
           setTimeout(() => {
             mpvService.seek(historyItem.lastPosition);
             get().addToast(
-              "已恢复播放进度",
-              `已跳转至 ${formatTime(historyItem.lastPosition)}`,
+              t("toast.resumedPlayback"),
+              t("toast.resumedTo", { time: formatTime(historyItem.lastPosition) }),
               "info"
             );
           }, 300);
@@ -239,7 +244,7 @@ export const usePlayerStore = create<PlayerState>()(
           .filter((f) => !currentList.some((existing) => existing.path === f.path))
           .map((f) => ({
             id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-            title: f.title || f.path.split(/[/\\]/).pop() || "未知文件",
+            title: f.title || f.path.split(/[/\\]/).pop() || t("common.unknown"),
             path: f.path,
             addedAt: Date.now(),
           }));
@@ -247,7 +252,11 @@ export const usePlayerStore = create<PlayerState>()(
         if (newItems.length > 0) {
           const updated = [...currentList, ...newItems];
           set({ playlist: updated });
-          get().addToast("已添加至播放列表", `新增 ${newItems.length} 个文件`, "success");
+          get().addToast(
+            t("toast.addedToPlaylist"),
+            t("toast.addedCount", { count: newItems.length }),
+            "success"
+          );
         }
       },
 
@@ -330,7 +339,7 @@ export const usePlayerStore = create<PlayerState>()(
         const rounded = parseFloat(speed.toFixed(2));
         set({ speed: rounded });
         await mpvService.setSpeed(rounded);
-        get().addToast("播放倍速", `${rounded}x`, "info");
+        get().addToast(t("speed.title"), `${rounded}x`, "info");
       },
 
       setTrack: async (trackType, id) => {
@@ -344,26 +353,26 @@ export const usePlayerStore = create<PlayerState>()(
 
       loadSubtitleFile: async (path: string) => {
         await mpvService.loadSub(path);
-        get().addToast("已加载外挂字幕", path.split(/[/\\]/).pop(), "success");
+        get().addToast(t("tracks.loadExternalSub"), path.split(/[/\\]/).pop(), "success");
       },
 
       loadAudioFile: async (path: string) => {
         await mpvService.loadAudio(path);
-        get().addToast("已加载外挂音轨", path.split(/[/\\]/).pop(), "success");
+        get().addToast(t("tracks.loadExternalAudio"), path.split(/[/\\]/).pop(), "success");
       },
 
       adjustSubDelay: async (deltaSec: number) => {
         const newDelay = Math.round((get().subDelay + deltaSec) * 10) / 10;
         set({ subDelay: newDelay });
         await mpvService.setSubDelay(newDelay);
-        get().addToast("字幕延迟校准", `${newDelay > 0 ? "+" : ""}${newDelay}s`, "info");
+        get().addToast(t("tracks.subDelay"), `${newDelay > 0 ? "+" : ""}${newDelay}s`, "info");
       },
 
       adjustAudioDelay: async (deltaSec: number) => {
         const newDelay = Math.round((get().audioDelay + deltaSec) * 10) / 10;
         set({ audioDelay: newDelay });
         await mpvService.setAudioDelay(newDelay);
-        get().addToast("音频延迟校准", `${newDelay > 0 ? "+" : ""}${newDelay}s`, "info");
+        get().addToast(t("tracks.audioDelay"), `${newDelay > 0 ? "+" : ""}${newDelay}s`, "info");
       },
 
       setVideoAdjust: async (adjustments) => {
@@ -385,13 +394,19 @@ export const usePlayerStore = create<PlayerState>()(
           await mpvService.setVideoAdjust(key, 0);
         }
         await mpvService.setVideoAspect("original");
-        get().addToast("画面调整已重置", undefined, "info");
+        get().addToast(t("videoAdjust.reset"), undefined, "info");
       },
 
       setAspectRatio: async (ratio: string) => {
         set((state) => ({ videoAdjust: { ...state.videoAdjust, aspectRatio: ratio } }));
         await mpvService.setVideoAspect(ratio);
-        get().addToast("画面比例", ratio === "original" ? "原始比例" : ratio, "info");
+        get().addToast(
+          t("toast.aspectSet"),
+          t("toast.aspectSetDesc", {
+            aspect: ratio === "original" ? t("videoAdjust.aspectAuto") : ratio,
+          }),
+          "info"
+        );
       },
 
       frameStep: async (forward: boolean) => {
@@ -400,14 +415,14 @@ export const usePlayerStore = create<PlayerState>()(
 
       takeScreenshot: async (includeSubs = true) => {
         await mpvService.takeScreenshot(includeSubs);
-        get().addToast("截图已保存", "已保存至 Pictures/Screenshots", "success");
+        get().addToast(t("toast.copiedScreenshot"), t("toast.screenshotSaved"), "success");
       },
 
       setHwdec: async (mode: string) => {
         if (mode === "no") {
           set({ hwdec: "no", hwdecCurrent: "no" });
           await mpvService.sendRawCommand(["set_property", "hwdec", "no"]);
-          get().addToast("解码模式", "已切换为纯 CPU 软件解码", "info");
+          get().addToast(t("settings.decoder"), t("settings.hwdecNo"), "info");
           return;
         }
 
@@ -422,18 +437,22 @@ export const usePlayerStore = create<PlayerState>()(
               // Failed to activate (e.g. non-NVIDIA GPU or unsupported codec)
               set({ hwdec: "no" });
               get().addToast(
-                "硬件加速未生效",
-                `设备或视频不支持 ${mode} 硬解，已自动回退为软件解码`,
+                t("toast.hwdecFallback"),
+                t("toast.hwdecFallbackDesc", { hwdec: mode }),
                 "warning"
               );
             } else {
               set({ hwdec: mode });
-              get().addToast("硬件加速已启用", `已成功激活硬件解码 (${current})`, "success");
+              get().addToast(
+                t("settings.decoder"),
+                `${t("settings.active")} (${current})`,
+                "success"
+              );
             }
           }, 300);
         } else {
           set({ hwdec: mode });
-          get().addToast("硬件加速模式", `已设置为 ${mode}（将在播放时生效）`, "info");
+          get().addToast(t("settings.decoder"), `${mode}`, "info");
         }
       },
 
@@ -543,6 +562,7 @@ export const usePlayerStore = create<PlayerState>()(
         volume: state.volume,
         muted: state.muted,
         hwdec: state.hwdec,
+        language: state.language,
         history: state.history,
         playlist: state.playlist,
       }),

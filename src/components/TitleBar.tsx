@@ -5,10 +5,12 @@ import { usePlayerStore } from "../stores/playerStore";
 import { isTauri, mpvService } from "../services/mpvService";
 import { NovidLogo } from "./NovidLogo";
 import { HistoryModal } from "./HistoryModal";
+import { useTranslation } from "../i18n";
 
 export const TitleBar: React.FC = () => {
   const { mediaTitle, currentPath, isPinned, isControlVisible, history, toggleSettings } =
     usePlayerStore();
+  const { t } = useTranslation();
   const [isMaximized, setIsMaximized] = useState(false);
   const [pinned, setPinned] = useState(isPinned);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -101,7 +103,7 @@ export const TitleBar: React.FC = () => {
           {/* Playback History Button */}
           <button
             onClick={() => setIsHistoryOpen(true)}
-            title={`播放历史 (${history.length})`}
+            title={`${t("history.title")} (${history.length})`}
             className="relative p-1.5 text-slate-400 hover:text-sky-300 hover:bg-white/10 rounded-md transition-colors mr-0.5"
           >
             <Clock className="w-3.5 h-3.5" />
@@ -113,7 +115,7 @@ export const TitleBar: React.FC = () => {
           {/* Settings Button */}
           <button
             onClick={() => toggleSettings(true)}
-            title="设置中心"
+            title={t("settings.title")}
             className="p-1.5 text-slate-400 hover:text-sky-300 hover:bg-white/10 rounded-md transition-colors mr-0.5"
           >
             <Settings className="w-3.5 h-3.5" />
@@ -122,7 +124,7 @@ export const TitleBar: React.FC = () => {
           {/* Always-on-Top Toggle */}
           <button
             onClick={handleTogglePin}
-            title={pinned ? "取消置顶" : "窗口置顶"}
+            title={pinned ? t("titleBar.unpinTop") : t("titleBar.pinTop")}
             className={`p-1.5 rounded-md transition-colors ${
               pinned
                 ? "bg-sky-500/30 text-sky-300 hover:bg-sky-500/40"
@@ -138,7 +140,7 @@ export const TitleBar: React.FC = () => {
           {/* Minimize */}
           <button
             onClick={handleMinimize}
-            title="最小化"
+            title={t("titleBar.minimize")}
             className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-white/10 rounded-md transition-colors"
           >
             <Minus className="w-3.5 h-3.5" />
@@ -147,7 +149,7 @@ export const TitleBar: React.FC = () => {
           {/* Maximize / Restore */}
           <button
             onClick={handleMaximize}
-            title={isMaximized ? "向下还原" : "最大化"}
+            title={isMaximized ? t("titleBar.restore") : t("titleBar.maximize")}
             className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-white/10 rounded-md transition-colors"
           >
             {isMaximized ? <Copy className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
@@ -156,7 +158,7 @@ export const TitleBar: React.FC = () => {
           {/* Close */}
           <button
             onClick={handleClose}
-            title="关闭"
+            title={t("titleBar.close")}
             className="p-1.5 text-slate-400 hover:text-white hover:bg-red-500/80 rounded-md transition-colors"
           >
             <X className="w-3.5 h-3.5" />

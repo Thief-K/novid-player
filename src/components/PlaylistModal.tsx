@@ -3,6 +3,7 @@ import { usePlayerStore } from "../stores/playerStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Plus, Trash2, X } from "lucide-react";
 import { isTauri } from "../services/mpvService";
+import { useTranslation } from "../i18n";
 
 export const PlaylistModal: React.FC = () => {
   const {
@@ -15,6 +16,7 @@ export const PlaylistModal: React.FC = () => {
     clearPlaylist,
     addToPlaylist,
   } = usePlayerStore();
+  const { t } = useTranslation();
 
   if (!isPlaylistOpen) return null;
 
@@ -25,7 +27,7 @@ export const PlaylistModal: React.FC = () => {
           multiple: true,
           filters: [
             {
-              name: "媒体文件",
+              name: t("playlist.addFiles"),
               extensions: [
                 "mp4",
                 "mkv",
@@ -69,12 +71,12 @@ export const PlaylistModal: React.FC = () => {
         {/* Minimal Header */}
         <div className="flex items-center justify-between px-1 pb-2 mb-1.5 border-b border-slate-800/80">
           <span className="text-xs font-semibold text-slate-300">
-            播放列表 {playlist.length > 0 && `(${playlist.length})`}
+            {t("playlist.title")} {playlist.length > 0 && `(${playlist.length})`}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={handleAddFiles}
-              title="添加文件"
+              title={t("playlist.addFiles")}
               className="p-1 text-slate-400 hover:text-sky-300 hover:bg-white/5 rounded-md transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -82,7 +84,7 @@ export const PlaylistModal: React.FC = () => {
             {playlist.length > 0 && (
               <button
                 onClick={clearPlaylist}
-                title="清空列表"
+                title={t("playlist.clearAll")}
                 className="p-1 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -90,7 +92,7 @@ export const PlaylistModal: React.FC = () => {
             )}
             <button
               onClick={() => togglePlaylist(false)}
-              title="关闭"
+              title={t("common.close")}
               className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"
             >
               <X className="w-3.5 h-3.5" />
@@ -102,13 +104,13 @@ export const PlaylistModal: React.FC = () => {
         <div className="flex-1 overflow-y-auto space-y-0.5 pr-0.5 max-h-64">
           {playlist.length === 0 ? (
             <div className="py-8 text-center text-slate-500 text-xs">
-              <p className="mb-2.5">暂无播放文件</p>
+              <p className="mb-2.5">{t("playlist.empty")}</p>
               <button
                 onClick={handleAddFiles}
                 className="px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 text-xs border border-sky-500/30 transition-colors inline-flex items-center gap-1.5"
               >
                 <Plus className="w-3 h-3" />
-                <span>添加本地文件</span>
+                <span>{t("playlist.addFiles")}</span>
               </button>
             </div>
           ) : (
@@ -146,7 +148,7 @@ export const PlaylistModal: React.FC = () => {
                       e.stopPropagation();
                       removeFromPlaylist(item.id);
                     }}
-                    title="移除"
+                    title={t("common.cancel")}
                     className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-400 hover:bg-white/10 rounded transition-all"
                   >
                     <X className="w-3 h-3" />

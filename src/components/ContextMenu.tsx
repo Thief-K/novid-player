@@ -13,6 +13,7 @@ import {
   Subtitles,
   Sliders,
 } from "lucide-react";
+import { useTranslation } from "../i18n";
 
 interface ContextMenuProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
     toggleSettings,
     videoAdjust,
   } = usePlayerStore();
+  const { t } = useTranslation();
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -71,10 +73,10 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
 
   const speedOptions = [0.75, 1.0, 1.25, 1.5, 2.0];
   const aspectOptions = [
-    { label: "原始比例", val: "original" },
-    { label: "16:9 宽屏", val: "16:9" },
-    { label: "4:3 标准", val: "4:3" },
-    { label: "21:9 超宽", val: "21:9" },
+    { label: t("videoAdjust.aspectAuto"), val: "original" },
+    { label: "16:9", val: "16:9" },
+    { label: "4:3", val: "4:3" },
+    { label: "21:9", val: "21:9" },
   ];
 
   return (
@@ -94,7 +96,9 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       >
         <div className="flex items-center gap-2">
           {paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-          <span>{paused ? "播放" : "暂停"}</span>
+          <span>
+            {paused ? t("controls.play").split(" ")[0] : t("controls.pause").split(" ")[0]}
+          </span>
         </div>
         <span className="text-[10px] text-slate-500 font-mono">Space</span>
       </button>
@@ -129,7 +133,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       <div className="px-2.5 py-1 text-[11px] text-slate-400 font-medium flex items-center justify-between">
         <span className="flex items-center gap-1.5">
           <Gauge className="w-3.5 h-3.5 text-sky-400" />
-          <span>播放倍速</span>
+          <span>{t("speed.title")}</span>
         </span>
         <span className="font-mono text-sky-400">{speed.toFixed(1)}x</span>
       </div>
@@ -155,7 +159,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       {/* Aspect Ratio */}
       <div className="px-2.5 py-1 text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
         <Monitor className="w-3.5 h-3.5 text-sky-400" />
-        <span>画面比例</span>
+        <span>{t("videoAdjust.aspectRatio")}</span>
       </div>
       <div className="grid grid-cols-2 gap-1 px-1 mb-1">
         {aspectOptions.map((a) => (
@@ -188,7 +192,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       >
         <div className="flex items-center gap-2">
           <Subtitles className="w-3.5 h-3.5" />
-          <span>字幕与音轨</span>
+          <span>{t("tracks.subTitle")}</span>
         </div>
         <span className="text-[10px] text-slate-500 font-mono">C / V</span>
       </button>
@@ -202,7 +206,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       >
         <div className="flex items-center gap-2">
           <Sliders className="w-3.5 h-3.5" />
-          <span>色彩调节</span>
+          <span>{t("videoAdjust.title")}</span>
         </div>
       </button>
 
@@ -215,7 +219,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       >
         <div className="flex items-center gap-2">
           <Camera className="w-3.5 h-3.5" />
-          <span>截取画面</span>
+          <span>{t("settings.hotkeyScreenshot")}</span>
         </div>
         <span className="text-[10px] text-slate-500 font-mono">S</span>
       </button>
@@ -229,7 +233,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       >
         <div className="flex items-center gap-2">
           <ListMusic className="w-3.5 h-3.5" />
-          <span>播放列表</span>
+          <span>{t("playlist.title")}</span>
         </div>
         <span className="text-[10px] text-slate-500 font-mono">L</span>
       </button>
@@ -246,7 +250,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, x, y, onClose 
       >
         <div className="flex items-center gap-2">
           <Settings className="w-3.5 h-3.5" />
-          <span>设置中心</span>
+          <span>{t("settings.title")}</span>
         </div>
       </button>
     </div>

@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Volume2, Volume1, VolumeX, Volume } from "lucide-react";
 import { usePlayerStore } from "../stores/playerStore";
+import { useTranslation } from "../i18n";
 
 export const VolumeControl: React.FC = () => {
   const { volume, muted, setVolume, toggleMute } = usePlayerStore();
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
 
   const getVolumeIcon = () => {
@@ -28,7 +30,7 @@ export const VolumeControl: React.FC = () => {
     >
       <button
         onClick={toggleMute}
-        title={muted ? "取消静音 (M)" : "静音 (M)"}
+        title={muted ? t("controls.unmute") : t("controls.mute")}
         className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
       >
         {getVolumeIcon()}
