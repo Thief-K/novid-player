@@ -37,8 +37,8 @@ Welcome to the **NovidPlayer** repository. This document serves as the single so
 └────────────────────────────────────────────────────────┘
 ```
 
-- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v3/v4, Zustand 5, Lucide React, Framer Motion.
-- **Backend**: Tauri v2, Rust 2021 edition, Tokio, `parking_lot`, `windows` crate.
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Zustand 5, Lucide React.
+- **Backend**: Tauri v2, Rust 2021 edition, Tokio, `parking_lot`.
 - **Engine**: MPV (standalone `mpv.exe`) rendering directly into the Tauri parent `HWND` via `--wid` with a transparent WebView2 overlay on top.
 - **IPC Communication**: Tokio asynchronous JSON-IPC client connecting over Windows Named Pipes (`\\.\pipe\mpvsocket_novidplayer_<pid>`).
 
@@ -73,11 +73,14 @@ novid-player/
     ├── main.tsx                    # React DOM entry point
     ├── i18n/                       # Type-safe zero-dependency internationalization
     │   ├── index.ts                # i18n provider hook, context & locale detection
+    │   ├── types.ts                # Locale & translation schema definitions
     │   └── locales/
     │       ├── zh-CN.ts            # Simplified Chinese language dictionary
     │       └── en-US.ts            # American English language dictionary
     ├── types/
     │   └── player.ts               # Core TypeScript interfaces & state schemas
+    ├── utils/
+    │   └── format.ts               # Shared time formatting utilities (formatTime)
     ├── stores/
     │   └── playerStore.ts          # Zustand player state, history & preferences
     ├── services/
@@ -95,7 +98,7 @@ novid-player/
         ├── VideoAdjustPanel.tsx    # Aspect ratio & color balance (contrast/gamma)
         ├── SettingsModal.tsx       # 4-tab settings modal (General, Decoder, Shortcuts, About)
         ├── HistoryModal.tsx        # Recent playback history modal
-        ├── PlaylistDrawer.tsx      # Playlist management drawer
+        ├── PlaylistModal.tsx       # Playlist management modal
         ├── ContextMenu.tsx         # Desktop-grade right-click menu with cascading submenus
         ├── NovidLogo.tsx           # Brand SVG vector icon
         └── Toast.tsx               # Glassmorphic notification alerts
@@ -228,6 +231,17 @@ cargo clippy
   - No infinite automatic reloads or loops when playing single files.
   - Clicking Play at the end of the video immediately triggers `seek(0)` and起播 from `00:00`.
   - Finished video timestamps in history are reset to 0 so future re-opens start from the beginning.
+
+### H. Panel State Machine & Volume/Mute Lifecycle Synchronization
+
+- **Exclusive Active Panel (`activePanel`)**: UI modals and drawers use a single mutex state `activePanel: 'playlist' | 'track' | 'speed' | 'videoAdjust' | 'settings' | null` with `togglePanel()` / `closeAllPanels()` to prevent multi-panel race conditions.
+- **MPV Ready Handshake & Factory Default Protection**:
+  - MPV process emits `mpv-ready` after named pipe connect and property observers are configured.
+  - Before `isMpvReady` is true, MPV observer factory default events (`mute: false`, `volume: 100`) MUST NOT overwrite persisted localStorage user preferences.
+  - Upon receiving `mpv-ready` or on initial mount, Zustand actively pushes stored `volume`, `muted`, `hwdec`, and `speed` states to MPV.
+- **Enforced Video Load Synchronization**:
+  - In `loadAndPlay`, `setVolume` and `setMute` are explicitly re-asserted immediately after `loadFile` to prevent audio bursts when opening videos in muted state.
+  - Volume slider adjustments to `0%` automatically engage `mute: true`, and adjusting above `0%` while muted automatically disengages `mute: false`.
 
 ---
 
