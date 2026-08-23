@@ -1,115 +1,60 @@
-# 🎬 NovidPlayer - 现代化 Windows 11 MPV 极简视频播放器
+# 🎬 NovidPlayer
 
-NovidPlayer 是一款专为 Windows 11 打造的高颜值、极简、现代化本地视频播放器。
-前端采用 **React 19 + Vite + Tailwind CSS + Lucide Icons + Framer Motion** 构建沉浸式流媒体风格 UI，后端基于 **Tauri v2 (Rust)** 管理 **MPV 硬件加速解码内核**，通过 **Windows 命名管道 (`\\.\pipe\mpvsocket_novidplayer_<pid>`)** 实现毫秒级双向 JSON-IPC 通信，将视频画面直接输出渲染到应用原生窗口中。
+**NovidPlayer** 是一款专为 Windows 11 打造的高性能、极简、现代化本地视频播放器。
 
----
-
-## 🌟 核心特性
-
-- **现代流媒体视觉交互 (UI/UX)**：
-  - 摆脱传统播放器陈旧菜单，采用类似 YouTube / Bilibili 现代化悬浮控制栏（OSD）。
-  - 支持 Windows 11 暗色磨砂玻璃（Acrylic / Mica）半透明质感与优雅微交互动画。
-  - 沉浸式无边框窗口设计，自定义极简标题栏（支持窗口拖拽、置顶切换、硬件解码状态徽标）。
-  - 鼠标静止 2 秒平滑淡出隐藏控制栏；移动鼠标平滑唤醒。
-- **高响应式进度条 (Scrubber)**：
-  - 细长优雅，悬停时平滑加粗，实时计算并跟随鼠标显示悬停时间预览气泡。
-  - 实时显示已缓冲进度条（Buffer track）与平滑拖拽 Seek。
-- **底层 MPV 高性能硬件加速**：
-  - 默认开启 `hwdec=auto-safe`（支持 Direct3D11 / NVDEC），流畅硬解 4K 60fps 10-bit HEVC / AV1 视频，CPU 占用极低。
-  - 进程级解耦，通过 Tokio 异步 Windows 命名管道高频监听与下发指令。
-- **全功能播放控制与增强面板**：
-  - **音量增强**：悬浮滑块无级调节，支持突破 100% 增益至 150%。
-  - **倍速微调**：0.5x, 0.75x, 1.0x, 1.25x, 1.5x, 2.0x, 3.0x 预设与 0.25x~4.0x 滑块微调。
-  - **音轨与字幕管理**：内置音轨与字幕切换、拖拽/选择加载外挂字幕（`.srt, .ass, .vtt`）、字幕与音频延迟毫秒级校准（±0.1s）。
-  - **画面色彩与比例**：亮度、对比度、饱和度、伽马值调节；强制 16:9 / 4:3 / 21:9 / 1:1 / 原始比例。
-  - **浮动式播放列表**：支持批量拖入、拖拽重排、自动连播下一集、历史播放进度记忆。
-  - **快捷截图**：支持一键捕获当前高清画面至 `Pictures/Screenshots`。
+基于 **Tauri v2 (Rust)** 与 **MPV 高性能硬解内核** 构建，配合 **React 19 + Tailwind CSS** 提供如同流媒体般的纯净沉浸式播放体验。
 
 ---
 
-## ⌨️ 快捷键映射
+## ✨ 核心特性
 
-| 快捷键            | 功能描述                   |
-| :---------------- | :------------------------- |
-| **Space**         | 播放 / 暂停                |
-| **← / →**         | 快退 5 秒 / 快进 5 秒      |
-| **Shift + ← / →** | 精确微调步进 1 秒          |
-| **↑ / ↓**         | 增加 / 减少音量 5%         |
-| **M**             | 静音 / 恢复音量            |
-| **F / 双击画面**  | 进入 / 退出全屏            |
-| **Escape**        | 退出全屏 / 关闭弹出面板    |
-| **[ / ]**         | 播放速度 -0.1x / +0.1x     |
-| **Backspace**     | 恢复 1.0x 正常倍速         |
-| **C**             | 快速循环切换字幕           |
-| **V**             | 快速循环切换音轨           |
-| **S**             | 高清截取当前画面           |
-| **. / ,**         | 逐帧前进 / 逐帧后退        |
-| **L**             | 打开 / 收起播放列表        |
-| **Ctrl + O**      | 弹出选择本地媒体文件对话框 |
+- **现代流媒体视觉 (OSD)**：全屏无边框毛玻璃沉浸式界面，控制栏自动隐藏/唤醒。
+- **MPV 硬件加速**：Direct3D 11 / NVDEC 原生硬解，超低 CPU 占用流畅播放 4K 60fps 10-bit HEVC / AV1。
+- **高响应进度条**：悬停精准时间气泡预览，平滑拖拽寻道与缓冲条显示。
+- **专业播放控制**：
+  - **音量增强**：0% ~ 150% 增益调节；
+  - **无级倍速**：0.25x ~ 4.0x 精确微调与常用预设；
+  - **音轨与外挂字幕**：支持 `.srt / .ass / .vtt` 拖拽载入与毫秒级时延校准；
+  - **色彩与画面比例**：16:9 / 4:3 / 21:9 强制比例，亮暗度与对比度微调；
+  - **播放记忆与列表**：自动记忆历史进度，抽屉式播放列表支持多文件拖拽连播。
 
 ---
 
-## 📁 目录结构
+## ⌨️ 快捷键速查
 
-```
-novidplayer/
-├── scripts/
-│   └── setup-mpv.ps1               # MPV 便携版引擎依赖检测与自动配置脚本
-├── src-tauri/                      # Tauri v2 (Rust) 后端
-│   ├── Cargo.toml                  # Rust 依赖与发布配置
-│   ├── tauri.conf.json             # 窗口、无边框与资源打包配置
-│   ├── capabilities/               # 桌面端安全权限策略
-│   └── src/
-│       ├── lib.rs                  # 应用生命周期与插件初始化
-│       ├── main.rs                 # 桌面程序主入口
-│       ├── mpv_ipc.rs              # Tokio 异步 Windows 命名管道通信模块
-│       ├── mpv_manager.rs          # MPV 进程管理与 HWND 窗口挂载
-│       └── commands.rs             # 前端 Tauri Command 指令调度中心
-└── src/                            # 前端 Web UI (React 19 + Vite)
-    ├── types/player.ts             # 播放器核心 TypeScript 类型定义
-    ├── stores/playerStore.ts       # Zustand 播放器状态管理与历史持久化
-    ├── services/mpvService.ts      # Tauri IPC 与事件分发包装层
-    ├── hooks/
-    │   └── useKeyboardShortcuts.ts # 全局键盘与手势快捷键绑定
-    └── components/
-        ├── TitleBar.tsx            # Windows 11 现代自定义沉浸式标题栏
-        ├── WelcomeDropZone.tsx     # 空闲拖拽导入与最近播放记录面板
-        ├── FloatingControls.tsx    # 悬浮主播放控制栏 (OSD)
-        ├── ProgressBar.tsx         # 悬浮响应式进度条 (带悬停时间气泡)
-        ├── VolumeControl.tsx       # 悬浮音量与 150% 增益调节
-        ├── TrackPanel.tsx          # 音轨与字幕管理抽屉 (含延迟微调)
-        ├── SpeedPanel.tsx          # 倍速切换面板
-        ├── VideoAdjustPanel.tsx    # 画面比例与色彩滤镜面板
-        ├── PlaylistDrawer.tsx      # 右侧抽屉式播放列表
-        ├── SettingsModal.tsx       # 设置中心与快捷键指南
-        └── Toast.tsx               # 磨砂玻璃全局通知提示
-```
+| 快捷键       | 功能              | 快捷键            | 功能                |
+| :----------- | :---------------- | :---------------- | :------------------ |
+| **Space**    | 播放 / 暂停       | **F / 双击画面**  | 进入 / 退出全屏     |
+| **← / →**    | 快退 5s / 快进 5s | **Shift + ← / →** | 精确步进 1s         |
+| **↑ / ↓**    | 音量调节 ±5%      | **M**             | 静音切换            |
+| **[ / ]**    | 播放速度 ±0.1x    | **Backspace**     | 恢复 1.0x 正常倍速  |
+| **C / V**    | 切换字幕 / 音轨   | **S**             | 高清截图至相册      |
+| **. / ,**    | 逐帧前进 / 后退   | **L**             | 打开 / 收起播放列表 |
+| **Ctrl + O** | 选择本地文件      | **Escape**        | 退出全屏 / 关闭弹窗 |
 
 ---
 
-## 🚀 开发与构建
+## 🚀 快速开始
 
-### 1. 配置 MPV 引擎依赖
+### 1. 环境准备与依赖安装
 
-在项目根目录运行初始化脚本，自动配置 `mpv.exe`：
+- Node.js >= 18, `pnpm` >= 9
+- Rust toolchain (stable-msvc)
 
 ```powershell
-pnpm setup-mpv
+pnpm install
+pnpm setup-mpv   # 自动下载并配置 mpv.exe 核心依赖
 ```
 
-_(或将您现有的 64 位 `mpv.exe` 直接放入 `src-tauri/binaries/mpv.exe`)_
-
-### 2. 启动开发模式
+### 2. 运行与构建
 
 ```powershell
-pnpm tauri dev
+pnpm tauri dev   # 启动桌面开发模式
+pnpm tauri build # 构建发布版 Windows 安装包 (MSI / NSIS)
 ```
 
-### 3. 构建独立的 Windows 安装包 / 单文件 exe
+---
 
-```powershell
-pnpm tauri build
-```
+## 📖 开发者与架构文档
 
-编译生成的安装包位于 `src-tauri/target/release/bundle/msi/` 与 `src-tauri/target/release/bundle/nsis/`。
+关于项目的底层 IPC 通信设计、Direct3D 11 渲染机制、目录架构以及编码规范，请参阅 [AGENTS.md](./AGENTS.md)。
