@@ -17,7 +17,9 @@ export const TitleBar: React.FC = () => {
     if (!isTauri()) return;
     const win = getCurrentWindow();
     const checkMaximized = async () => {
-      setIsMaximized(await win.isMaximized());
+      const isMax = await win.isMaximized();
+      const isFull = await mpvService.isFullscreen();
+      setIsMaximized(isMax || isFull);
     };
     checkMaximized();
 
@@ -35,8 +37,15 @@ export const TitleBar: React.FC = () => {
   };
 
   const handleMaximize = async () => {
-    const nextMax = await mpvService.toggleMaximize();
-    setIsMaximized(nextMax);
+    const isFull = await mpvService.isFullscreen();
+    if (isFull) {
+      // If in fullscreen, exit fullscreen back to normal
+      await mpvService.toggleFullscreen();
+      setIsMaximized(false);
+    } else {
+      const nextMax = await mpvService.toggleMaximize();
+      setIsMaximized(nextMax);
+    }
   };
 
   const handleClose = async () => {

@@ -2,7 +2,7 @@ import React from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen } from "lucide-react";
 import { usePlayerStore } from "../stores/playerStore";
-import { isTauri } from "../services/mpvService";
+import { isTauri, mpvService } from "../services/mpvService";
 import { NovidLogo } from "./NovidLogo";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -16,15 +16,7 @@ export const WelcomeDropZone: React.FC = () => {
     }
 
     if (e.detail === 2) {
-      if (isTauri()) {
-        const win = getCurrentWindow();
-        const isMax = await win.isMaximized();
-        if (isMax) {
-          await win.unmaximize();
-        } else {
-          await win.maximize();
-        }
-      }
+      await mpvService.toggleMaximize();
     } else if (e.detail === 1) {
       if (isTauri()) {
         getCurrentWindow().startDragging();
