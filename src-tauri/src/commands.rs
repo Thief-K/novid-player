@@ -298,6 +298,31 @@ pub async fn check_mpv_status(
 }
 
 #[tauri::command]
+pub async fn get_video_thumbnail(
+    manager: State<'_, MpvManager>,
+    thumb_mgr: State<'_, crate::thumbnail::ThumbnailManager>,
+    app: AppHandle,
+    file_path: String,
+    time_sec: f64,
+) -> Result<String, String> {
+    let mpv_path = manager
+        .find_mpv_binary(&app)
+        .ok_or_else(|| "MPV binary not found".to_string())?;
+
+    thumb_mgr
+        .get_thumbnail(&app, &mpv_path, &file_path, time_sec)
+        .await
+}
+
+#[tauri::command]
+pub async fn cleanup_thumbnails(
+    thumb_mgr: State<'_, crate::thumbnail::ThumbnailManager>,
+) -> Result<(), String> {
+    thumb_mgr.cleanup();
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn start_window_dragging(window: tauri::Window) -> Result<(), String> {
     window.start_dragging().map_err(|e| e.to_string())
 }

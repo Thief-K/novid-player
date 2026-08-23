@@ -199,6 +199,7 @@ export const usePlayerStore = create<PlayerState>()(
 
         // Check history for last played position
         const historyItem = get().history.find((h) => h.path === filePath);
+        mpvService.cleanupThumbnails();
         await mpvService.loadFile(filePath);
 
         if (

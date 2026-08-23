@@ -13,6 +13,8 @@ export interface MpvEventPayload {
   error?: string;
 }
 
+const thumbnailMemoryCache = new Map<string, string>();
+
 export const mpvService = {
   async isAvailable(): Promise<boolean> {
     if (!isTauri()) return false;
@@ -195,6 +197,37 @@ export const mpvService = {
   async setAlwaysOnTop(alwaysOnTop: boolean): Promise<void> {
     if (isTauri()) {
       await invoke("set_window_always_on_top", { alwaysOnTop });
+    }
+  },
+
+  async getThumbnail(filePath: string, timeSec: number): Promise<string> {
+    if (!isTauri() || !filePath) return "";
+    const key = `${filePath}_${(Math.round(timeSec * 2) / 2).toFixed(1)}`;
+    if (thumbnailMemoryCache.has(key)) {
+      return thumbnailMemoryCache.get(key)!;
+    }
+
+    try {
+      const dataUrl = await invoke<string>("get_video_thumbnail", {
+        filePath,
+        timeSec,
+      });
+      if (thumbnailMemoryCache.size > 150) {
+        const oldest = thumbnailMemoryCache.keys().next().value;
+        if (oldest) thumbnailMemoryCache.delete(oldest);
+      }
+      thumbnailMemoryCache.set(key, dataUrl);
+      return dataUrl;
+    } catch (err) {
+      console.warn("[Thumbnail] Failed to extract frame:", err);
+      return "";
+    }
+  },
+
+  async cleanupThumbnails(): Promise<void> {
+    thumbnailMemoryCache.clear();
+    if (isTauri()) {
+      await invoke("cleanup_thumbnails");
     }
   },
 

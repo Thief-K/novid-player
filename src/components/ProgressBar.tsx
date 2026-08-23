@@ -1,13 +1,20 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { usePlayerStore } from "../stores/playerStore";
+import { mpvService } from "../services/mpvService";
 
 export const ProgressBar: React.FC = () => {
-  const { currentTime, duration, bufferPercent, seek } = usePlayerStore();
+  const { currentTime, duration, bufferPercent, seek, currentPath } = usePlayerStore();
   const barRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isCardActive, setIsCardActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverPosition, setHoverPosition] = useState<number | null>(null);
+  const [cardPosition, setCardPosition] = useState<number | null>(null);
   const [hoverTime, setHoverTime] = useState<number>(0);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [isLoadingThumbnail, setIsLoadingThumbnail] = useState(false);
+  const dwellTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const thumbDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const calculateRatio = useCallback((clientX: number): number => {
     if (!barRef.current) return 0;
@@ -16,20 +23,67 @@ export const ProgressBar: React.FC = () => {
     return rect.width > 0 ? x / rect.width : 0;
   }, []);
 
+  const fetchThumbnail = useCallback(
+    (targetTime: number) => {
+      if (!currentPath || targetTime < 0) return;
+      if (thumbDebounceRef.current) {
+        clearTimeout(thumbDebounceRef.current);
+      }
+
+      thumbDebounceRef.current = setTimeout(async () => {
+        setIsLoadingThumbnail(true);
+        const dataUrl = await mpvService.getThumbnail(currentPath, targetTime);
+        if (dataUrl) {
+          setThumbnailUrl(dataUrl);
+        }
+        setIsLoadingThumbnail(false);
+      }, 60);
+    },
+    [currentPath]
+  );
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (!barRef.current || duration <= 0) return;
       const ratio = calculateRatio(e.clientX);
       const rect = barRef.current.getBoundingClientRect();
       const pos = e.clientX - rect.left;
-      setHoverPosition(pos);
-      setHoverTime(ratio * duration);
+      const t = ratio * duration;
+
+      // Exact clamped cursor position for the time bubble
+      const clampedBubble = Math.max(20, Math.min(pos, rect.width - 20));
+      setHoverPosition(clampedBubble);
+      setHoverTime(t);
+
+      // Clamped position for the 180px thumbnail card (12px safe margin)
+      const CARD_WIDTH = 180;
+      const CARD_HALF = CARD_WIDTH / 2;
+      const SAFE_MARGIN = 12;
+      const clampedCard = Math.max(
+        CARD_HALF + SAFE_MARGIN,
+        Math.min(pos, rect.width - CARD_HALF - SAFE_MARGIN)
+      );
+      setCardPosition(clampedCard);
+
+      if (isCardActive) {
+        // Card is already active: continuously fetch/update thumbnail as user moves
+        fetchThumbnail(t);
+      } else {
+        // Card not yet active: start/reset 300ms dwell timer
+        if (dwellTimerRef.current) {
+          clearTimeout(dwellTimerRef.current);
+        }
+        dwellTimerRef.current = setTimeout(() => {
+          setIsCardActive(true);
+          fetchThumbnail(t);
+        }, 300);
+      }
 
       if (isDragging) {
-        seek(ratio * duration);
+        seek(t);
       }
     },
-    [calculateRatio, duration, isDragging, seek]
+    [calculateRatio, duration, fetchThumbnail, isCardActive, isDragging, seek]
   );
 
   const handleMouseDown = useCallback(
@@ -60,6 +114,9 @@ export const ProgressBar: React.FC = () => {
     return () => {
       window.removeEventListener("mouseup", handleGlobalMouseUp);
       window.removeEventListener("mousemove", handleGlobalMouseMove);
+      if (dwellTimerRef.current) {
+        clearTimeout(dwellTimerRef.current);
+      }
     };
   }, [calculateRatio, duration, isDragging, seek]);
 
@@ -82,13 +139,22 @@ export const ProgressBar: React.FC = () => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
+        setIsCardActive(false);
         setHoverPosition(null);
+        setCardPosition(null);
+        setThumbnailUrl(null);
+        if (dwellTimerRef.current) {
+          clearTimeout(dwellTimerRef.current);
+        }
+        if (thumbDebounceRef.current) {
+          clearTimeout(thumbDebounceRef.current);
+        }
       }}
       onMouseMove={handleMouseMove}
       onMouseDown={handleMouseDown}
     >
-      {/* Floating Hover Time Bubble */}
-      {isHovered && hoverPosition !== null && duration > 0 && (
+      {/* Lightweight Floating Hover Time Bubble (displayed before card unlocks) */}
+      {isHovered && !isCardActive && hoverPosition !== null && duration > 0 && (
         <div
           className="absolute -top-7 transform -translate-x-1/2 px-2 py-0.5 rounded-md bg-slate-900/90 text-[11px] font-mono text-slate-100 border border-slate-700/80 shadow-xl pointer-events-none z-30 backdrop-blur-xs transition-transform"
           style={{ left: `${hoverPosition}px` }}
@@ -96,6 +162,36 @@ export const ProgressBar: React.FC = () => {
           {formatTime(hoverTime)}
         </div>
       )}
+
+      {/* Modern Floating Hover Thumbnail Card (activated once dwelled for > 300ms) */}
+      {isHovered &&
+        isCardActive &&
+        (cardPosition !== null || hoverPosition !== null) &&
+        duration > 0 && (
+          <div
+            className="absolute -top-[118px] transform -translate-x-1/2 w-[180px] h-[101px] rounded-xl overflow-hidden bg-slate-900/95 border border-slate-700/80 shadow-2xl pointer-events-none z-30 backdrop-blur-md transition-all duration-100 flex flex-col items-center justify-center"
+            style={{ left: `${cardPosition ?? hoverPosition}px` }}
+          >
+            {/* Shimmer skeleton loading placeholder */}
+            {(!thumbnailUrl || isLoadingThumbnail) && (
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-800/90 via-slate-700/40 to-slate-800/90 animate-pulse flex items-center justify-center" />
+            )}
+
+            {/* Extracted Thumbnail Frame */}
+            {thumbnailUrl && (
+              <img
+                src={thumbnailUrl}
+                alt="Preview"
+                className="w-full h-full object-cover rounded-xl transition-opacity duration-200"
+              />
+            )}
+
+            {/* Embedded Monospace Time Badge */}
+            <div className="absolute bottom-1.5 px-2 py-0.5 rounded-md bg-black/80 text-[11px] font-mono font-medium text-slate-100 backdrop-blur-xs border border-white/10 shadow-md z-10">
+              {formatTime(hoverTime)}
+            </div>
+          </div>
+        )}
 
       {/* Progress Track Container */}
       <div

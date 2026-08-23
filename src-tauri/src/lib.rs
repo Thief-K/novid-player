@@ -1,9 +1,11 @@
 pub mod commands;
 pub mod mpv_ipc;
 pub mod mpv_manager;
+pub mod thumbnail;
 
 use mpv_manager::MpvManager;
 use tauri::{Manager, WindowEvent};
+use thumbnail::ThumbnailManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -11,6 +13,8 @@ pub fn run() {
 
     let mpv_manager = MpvManager::new();
     let mpv_clone = mpv_manager.clone();
+    let thumbnail_manager = ThumbnailManager::new();
+    let thumbnail_clone = thumbnail_manager.clone();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -18,6 +22,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .manage(mpv_manager)
+        .manage(thumbnail_manager)
         .invoke_handler(tauri::generate_handler![
             commands::mpv_command,
             commands::mpv_set_property,
@@ -37,6 +42,8 @@ pub fn run() {
             commands::frame_step,
             commands::take_screenshot,
             commands::check_mpv_status,
+            commands::get_video_thumbnail,
+            commands::cleanup_thumbnails,
             commands::start_window_dragging,
             commands::toggle_window_maximize,
             commands::toggle_window_fullscreen,
@@ -70,7 +77,7 @@ pub fn run() {
         })
         .on_window_event(move |_window, event| {
             if let WindowEvent::Destroyed = event {
-                // Window destroyed cleanup
+                thumbnail_clone.cleanup();
             }
         })
         .run(tauri::generate_context!())
