@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { usePlayerStore } from "../stores/playerStore";
 import { useTranslation, LanguageCode } from "../i18n";
-import { X, Cpu, Keyboard, Info, Globe, CheckCircle2, Sparkles } from "lucide-react";
+import { X, Cpu, Keyboard, Info, Globe, CheckCircle2, Sparkles, Maximize2 } from "lucide-react";
 import { NovidLogo } from "./NovidLogo";
 
 export const SettingsModal: React.FC = () => {
@@ -14,6 +14,8 @@ export const SettingsModal: React.FC = () => {
     currentPath,
     language,
     setLanguage,
+    autoFitWindow,
+    setAutoFitWindow,
   } = usePlayerStore();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"general" | "decoder" | "shortcuts" | "about">(
@@ -187,6 +189,31 @@ export const SettingsModal: React.FC = () => {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Auto-fit Window Resolution Toggle Card */}
+              <div className="p-4 rounded-xl bg-slate-850/60 border border-slate-800 flex items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <Maximize2 className="w-3.5 h-3.5 text-sky-400" />
+                    <span>{t("settings.autoFitWindow")}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">{t("settings.autoFitWindowDesc")}</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAutoFitWindow(!autoFitWindow)}
+                  className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    autoFitWindow ? "bg-sky-500 shadow-sm shadow-sky-500/30" : "bg-slate-700"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      autoFitWindow ? "translate-x-4" : "translate-x-0"
+                    }`}
+                  />
+                </button>
               </div>
             </div>
           )}

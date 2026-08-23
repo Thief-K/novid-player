@@ -49,6 +49,8 @@ interface PlayerState {
   isPinned: boolean;
   isFullscreen: boolean;
   language: "auto" | "zh-CN" | "en-US";
+  autoFitWindow: boolean;
+  shouldAutoFitOnLoad: boolean;
 
   // Playlists and history
   playlist: PlaylistItem[];
@@ -58,6 +60,7 @@ interface PlayerState {
 
   // Actions
   setLanguage: (lang: "auto" | "zh-CN" | "en-US") => void;
+  setAutoFitWindow: (enabled: boolean) => void;
   setControlVisible: (visible: boolean) => void;
   togglePlaylist: (open?: boolean) => void;
   toggleTrackPanel: (open?: boolean) => void;
@@ -132,6 +135,8 @@ export const usePlayerStore = create<PlayerState>()(
       isPinned: false,
       isFullscreen: false,
       language: "auto",
+      autoFitWindow: true,
+      shouldAutoFitOnLoad: false,
 
       playlist: [],
       currentPlayingIndex: -1,
@@ -139,6 +144,7 @@ export const usePlayerStore = create<PlayerState>()(
       toasts: [],
 
       setLanguage: (lang) => set({ language: lang }),
+      setAutoFitWindow: (enabled) => set({ autoFitWindow: enabled }),
       setControlVisible: (visible) => set({ isControlVisible: visible }),
       togglePlaylist: (open) =>
         set((state) => ({
@@ -207,12 +213,19 @@ export const usePlayerStore = create<PlayerState>()(
         mpvService.cleanupThumbnails();
         await mpvService.loadFile(filePath);
         await mpvService.setPause(false);
-        set({ paused: false, currentTime: 0, percentPos: 0, bufferPercent: 0 });
+        set({
+          paused: false,
+          currentTime: 0,
+          percentPos: 0,
+          bufferPercent: 0,
+          shouldAutoFitOnLoad: true,
+        });
 
         if (
           historyItem &&
+          historyItem.duration > 0 &&
           historyItem.lastPosition > 5 &&
-          historyItem.lastPosition < historyItem.duration - 10
+          historyItem.lastPosition < historyItem.duration - 8
         ) {
           setTimeout(async () => {
             await mpvService.seek(historyItem.lastPosition);
@@ -232,7 +245,14 @@ export const usePlayerStore = create<PlayerState>()(
             id: `hist_${Date.now()}`,
             title: cleanTitle,
             path: filePath,
-            lastPosition: historyItem ? historyItem.lastPosition : 0,
+            lastPosition:
+              historyItem &&
+              historyItem.duration > 0 &&
+              historyItem.lastPosition >= historyItem.duration - 8
+                ? 0
+                : historyItem
+                  ? historyItem.lastPosition
+                  : 0,
             duration: historyItem ? historyItem.duration : 0,
             lastPlayedAt: Date.now(),
           },
@@ -293,20 +313,32 @@ export const usePlayerStore = create<PlayerState>()(
 
       playNext: async () => {
         const { playlist, currentPlayingIndex } = get();
-        if (playlist.length === 0) return;
+        if (playlist.length <= 1) return;
         const nextIndex = (currentPlayingIndex + 1) % playlist.length;
         await get().playIndex(nextIndex);
       },
 
       playPrev: async () => {
         const { playlist, currentPlayingIndex } = get();
-        if (playlist.length === 0) return;
+        if (playlist.length <= 1) {
+          await get().seek(0);
+          return;
+        }
         const prevIndex = (currentPlayingIndex - 1 + playlist.length) % playlist.length;
         await get().playIndex(prevIndex);
       },
 
       togglePlayPause: async () => {
-        const nextPaused = !get().paused;
+        const { paused, currentTime, duration } = get();
+        // If video is at the end (within 1.5s or duration reached), replay from beginning
+        if (duration > 0 && currentTime >= duration - 1.5) {
+          set({ currentTime: 0, percentPos: 0, paused: false });
+          await mpvService.seek(0);
+          await mpvService.setPause(false);
+          return;
+        }
+
+        const nextPaused = !paused;
         set({ paused: nextPaused });
         await mpvService.setPause(nextPaused);
       },
@@ -461,9 +493,14 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       addToast: (title, description, type = "info") => {
+        const isDuplicate = get().toasts.some(
+          (t) => t.title === title && t.description === description
+        );
+        if (isDuplicate) return;
+
         const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
         const newToast: ToastMessage = { id, title, description, type, duration: 2500 };
-        set((state) => ({ toasts: [...state.toasts.slice(-4), newToast] }));
+        set((state) => ({ toasts: [...state.toasts.slice(-3), newToast] }));
         setTimeout(() => {
           get().removeToast(id);
         }, 2500);
@@ -493,10 +530,11 @@ export const usePlayerStore = create<PlayerState>()(
                 // Update history position
                 const currentPath = get().currentPath;
                 if (currentPath && dur > 0) {
+                  const savedPos = val >= dur - 5 ? 0 : val;
                   set((state) => ({
                     history: state.history.map((h) =>
                       h.path === currentPath
-                        ? { ...h, lastPosition: val, duration: dur, lastPlayedAt: Date.now() }
+                        ? { ...h, lastPosition: savedPos, duration: dur, lastPlayedAt: Date.now() }
                         : h
                     ),
                   }));
@@ -507,7 +545,14 @@ export const usePlayerStore = create<PlayerState>()(
               if (typeof val === "number") set({ duration: val });
               break;
             case "pause":
-              if (typeof val === "boolean") set({ paused: val });
+              if (typeof val === "boolean") {
+                const { duration, currentTime } = get();
+                if (duration > 0 && currentTime >= duration - 0.5 && !val) {
+                  set({ paused: true });
+                } else {
+                  set({ paused: val });
+                }
+              }
               break;
             case "volume":
               if (typeof val === "number") set({ volume: Math.round(val) });
@@ -547,8 +592,36 @@ export const usePlayerStore = create<PlayerState>()(
               break;
             case "eof-reached":
               if (val === true) {
-                // Auto play next video in playlist
-                get().playNext();
+                const { currentPath, duration } = get();
+                // Reset finished video history position to 0
+                if (currentPath) {
+                  set((state) => ({
+                    history: state.history.map((h) =>
+                      h.path === currentPath ? { ...h, lastPosition: 0 } : h
+                    ),
+                  }));
+                }
+
+                // Stop at end of video, pause cleanly, and do not auto play next
+                set({ paused: true, currentTime: duration, percentPos: 100 });
+                mpvService.setPause(true);
+              }
+              break;
+            case "video-params":
+              if (val && typeof val === "object") {
+                const videoW = (val as any).dw || (val as any).w;
+                const videoH = (val as any).dh || (val as any).h;
+                if (
+                  typeof videoW === "number" &&
+                  typeof videoH === "number" &&
+                  videoW > 0 &&
+                  videoH > 0
+                ) {
+                  if (get().autoFitWindow && get().shouldAutoFitOnLoad) {
+                    set({ shouldAutoFitOnLoad: false });
+                    mpvService.autoFitWindow(videoW, videoH);
+                  }
+                }
               }
               break;
             case "media-title":
@@ -567,6 +640,7 @@ export const usePlayerStore = create<PlayerState>()(
         muted: state.muted,
         hwdec: state.hwdec,
         language: state.language,
+        autoFitWindow: state.autoFitWindow,
         history: state.history,
         playlist: state.playlist,
       }),

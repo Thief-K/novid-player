@@ -392,3 +392,80 @@ pub async fn set_window_always_on_top(
         .set_always_on_top(always_on_top)
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn auto_fit_window(
+    window: tauri::Window,
+    video_width: f64,
+    video_height: f64,
+) -> Result<(), String> {
+    if video_width <= 0.0 || video_height <= 0.0 {
+        return Ok(());
+    }
+
+    // Do not resize if currently fullscreen or maximized
+    if window.is_fullscreen().unwrap_or(false) || window.is_maximized().unwrap_or(false) {
+        return Ok(());
+    }
+
+    let monitor = window
+        .current_monitor()
+        .map_err(|e| e.to_string())?
+        .or_else(|| window.primary_monitor().ok().flatten());
+
+    let (max_w, max_h) = if let Some(m) = monitor {
+        let scale = m.scale_factor();
+        let size = m.size();
+        let logical_w = size.width as f64 / scale;
+        let logical_h = size.height as f64 / scale;
+        (logical_w * 0.85, logical_h * 0.85)
+    } else {
+        (1920.0 * 0.85, 1080.0 * 0.85)
+    };
+
+    let min_w = 640.0;
+    let min_h = 400.0;
+    let aspect = video_width / video_height;
+
+    let mut target_w = video_width;
+    let mut target_h = video_height;
+
+    // 1. Proportional downscale if exceeding max safe screen bounds
+    if target_w > max_w || target_h > max_h {
+        let scale_w = max_w / target_w;
+        let scale_h = max_h / target_h;
+        let scale = scale_w.min(scale_h);
+        target_w *= scale;
+        target_h *= scale;
+    }
+
+    // 2. Scale up if below minimum bounds while preserving aspect ratio
+    if target_w < min_w {
+        target_w = min_w;
+        target_h = min_w / aspect;
+    }
+    if target_h < min_h {
+        target_h = min_h;
+        target_w = min_h * aspect;
+    }
+
+    // 3. Final safety clamp against max bounds
+    if target_w > max_w {
+        target_w = max_w;
+        target_h = max_w / aspect;
+    }
+    if target_h > max_h {
+        target_h = max_h;
+        target_w = max_h * aspect;
+    }
+
+    let final_w = target_w.round() as u32;
+    let final_h = target_h.round() as u32;
+
+    window
+        .set_size(tauri::LogicalSize::new(final_w, final_h))
+        .map_err(|e| e.to_string())?;
+    window.center().map_err(|e| e.to_string())?;
+
+    Ok(())
+}

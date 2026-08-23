@@ -69,6 +69,9 @@ export const enUS: TranslationSchema = {
     langAuto: "Auto",
     langZh: "简体中文",
     langEn: "English",
+    autoFitWindow: "Auto-fit Video Resolution",
+    autoFitWindowDesc:
+      "Automatically resize the window to best fit video resolution and center on screen upon opening",
     decoderSection: "Hardware Acceleration",
     decoderDesc:
       "Configure MPV GPU hardware decode pipeline to reduce CPU usage and boost 4K/HDR performance",

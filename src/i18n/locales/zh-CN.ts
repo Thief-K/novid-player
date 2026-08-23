@@ -66,6 +66,8 @@ export const zhCN = {
     langAuto: "跟随系统",
     langZh: "简体中文",
     langEn: "English",
+    autoFitWindow: "自适应视频分辨率",
+    autoFitWindowDesc: "打开新视频时，自动将窗口调整为最契合该视频的最佳尺寸并居中",
     decoderSection: "硬件解码加速",
     decoderDesc: "配置 MPV 视频硬解渲染管线，降低 CPU 占用并提升 4K/HDR 流畅度",
     decoder: "硬件解码模式",

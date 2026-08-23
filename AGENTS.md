@@ -71,6 +71,11 @@ novid-player/
     ├── App.tsx                     # Main application layout & drag-and-drop listener
     ├── index.css                   # Global styles & Tailwind utilities
     ├── main.tsx                    # React DOM entry point
+    ├── i18n/                       # Type-safe zero-dependency internationalization
+    │   ├── index.ts                # i18n provider hook, context & locale detection
+    │   └── locales/
+    │       ├── zh-CN.ts            # Simplified Chinese language dictionary
+    │       └── en-US.ts            # American English language dictionary
     ├── types/
     │   └── player.ts               # Core TypeScript interfaces & state schemas
     ├── stores/
@@ -88,10 +93,10 @@ novid-player/
         ├── TrackPanel.tsx          # Audio track & subtitle drawer with delay sync
         ├── SpeedPanel.tsx          # Playback rate adjustment modal
         ├── VideoAdjustPanel.tsx    # Aspect ratio & color balance (contrast/gamma)
-        ├── SettingsModal.tsx       # Decoder preferences & hotkey guide
+        ├── SettingsModal.tsx       # 4-tab settings modal (General, Decoder, Shortcuts, About)
         ├── HistoryModal.tsx        # Recent playback history modal
         ├── PlaylistDrawer.tsx      # Playlist management drawer
-        ├── ContextMenu.tsx         # Right-click contextual quick menu
+        ├── ContextMenu.tsx         # Desktop-grade right-click menu with cascading submenus
         ├── NovidLogo.tsx           # Brand SVG vector icon
         └── Toast.tsx               # Glassmorphic notification alerts
 ```
@@ -151,6 +156,7 @@ cargo clippy
 
 1. **Safety & Concurrency**:
    - Use `tokio` for async operations and `parking_lot` for synchronization (`Mutex`, `RwLock`).
+   - Drop lock guards before calling `.await` points to prevent deadlocks and `await_holding_lock` warnings.
    - Propagate errors as `Result<T, String>` across Tauri command boundaries.
 2. **Process Management**:
    - MPV is managed as an asynchronous child process (`tokio::process::Child`).
@@ -203,6 +209,25 @@ cargo clippy
 - **Multi-Level Cache Management**:
   - **Frontend LRU**: Retains up to 150 frames in memory Map for 0ms re-hover lookups.
   - **Auto-Cleanup**: In-memory and disk temp folders (`%TEMP%/novidplayer_thumbs`) are wiped whenever a new video is loaded (`loadAndPlay`) or when the main window is destroyed (`WindowEvent::Destroyed`).
+
+### F. Auto-Fit Video Resolution & Safe Work Area Boundary
+
+- **1:1 Native Pixel Rendering**: When opening a video in standard window mode, the window dynamically auto-resizes to match the video's actual display dimensions (`dw` / `dh`).
+- **Screen Safety Bounds**:
+  - Calculated against `monitor.size() / monitor.scale_factor() * 0.85` (excluding Windows taskbar).
+  - Ultra-high resolution videos (4K/8K) are proportionally downscaled to fit comfortably within the 85% work area.
+  - Small or vertical videos are protected with minimum constraints (`minWidth: 640, minHeight: 400`) while preserving aspect ratio.
+  - The window automatically re-centers on the active display monitor upon resizing.
+- **State Invariant**: Never force-resize or exit fullscreen/maximized state if the user is already watching in fullscreen or maximized mode.
+
+### G. Playback Lifecycle & EOF (End-of-File) Invariants
+
+- **Deterministic Pause State**: Always use `set_pause(bool)` IPC commands instead of blind `cycle pause` to guarantee exact target state alignment between Zustand UI and MPV.
+- **End-of-Video Handling (`eof-reached`)**:
+  - Reaching the end of a video cleanly pauses at the last frame, locking the control bar into the Play (`<Play />`) icon state.
+  - No infinite automatic reloads or loops when playing single files.
+  - Clicking Play at the end of the video immediately triggers `seek(0)` and起播 from `00:00`.
+  - Finished video timestamps in history are reset to 0 so future re-opens start from the beginning.
 
 ---
 

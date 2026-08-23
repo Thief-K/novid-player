@@ -208,6 +208,16 @@ export const mpvService = {
     }
   },
 
+  async autoFitWindow(videoWidth: number, videoHeight: number): Promise<void> {
+    if (isTauri() && videoWidth > 0 && videoHeight > 0) {
+      try {
+        await invoke("auto_fit_window", { videoWidth, videoHeight });
+      } catch (err) {
+        console.warn("[Window] Failed to auto fit window:", err);
+      }
+    }
+  },
+
   async getThumbnail(filePath: string, timeSec: number): Promise<string> {
     if (!isTauri() || !filePath) return "";
     const key = `${filePath}_${(Math.round(timeSec * 2) / 2).toFixed(1)}`;
