@@ -14,6 +14,12 @@ pub struct ThumbnailManager {
     semaphore: Arc<tokio::sync::Semaphore>,
 }
 
+impl Default for ThumbnailManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ThumbnailManager {
     pub fn new() -> Self {
         let temp_base = std::env::temp_dir().join("novidplayer_thumbs");

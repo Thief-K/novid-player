@@ -274,12 +274,12 @@ pub async fn take_screenshot(
         "video"
     };
 
-    let screenshots_dir = if let Ok(user_profile) = std::env::var("USERPROFILE") {
-        format!("{}\\Pictures\\Screenshots", user_profile)
-    } else if let Ok(home) = std::env::var("HOME") {
-        format!("{}/Pictures/Screenshots", home)
-    } else {
-        "Screenshots".to_string()
+    let screenshots_dir = match std::env::var("USERPROFILE") {
+        Ok(user_profile) => format!("{}\\Pictures\\Screenshots", user_profile),
+        Err(_) => match std::env::var("HOME") {
+            Ok(home) => format!("{}/Pictures/Screenshots", home),
+            Err(_) => "Screenshots".to_string(),
+        },
     };
     let _ = std::fs::create_dir_all(&screenshots_dir);
 
@@ -292,14 +292,16 @@ pub async fn take_screenshot(
         ])
         .await;
 
-    manager
+    match manager
         .send_command(vec![
             Value::String("screenshot".to_string()),
             Value::String(mode.to_string()),
         ])
         .await
-        .map(|_| screenshots_dir)
-        .map_err(|e| e.to_string())
+    {
+        Ok(_) => Ok(screenshots_dir),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 #[tauri::command]
