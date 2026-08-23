@@ -17,6 +17,10 @@
   <strong>English</strong> | <a href="README_zh.md">简体中文</a>
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/preview-playback.png" alt="NovidPlayer Playback & Hover Thumbnail Preview" width="860">
+</p>
+
 ---
 
 ## ✨ Key Features

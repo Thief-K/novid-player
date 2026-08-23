@@ -17,6 +17,10 @@
   <a href="README.md">English</a> | <strong>简体中文</strong>
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/preview-playback.png" alt="NovidPlayer 播放与实时缩略图预览" width="860">
+</p>
+
 ---
 
 ## ✨ 核心特性
