@@ -29,10 +29,35 @@ impl ThumbnailManager {
         }
     }
 
-    fn hash_path(path: &str) -> u64 {
+    pub fn hash_path(path: &str) -> u64 {
         let mut hasher = DefaultHasher::new();
         path.hash(&mut hasher);
         hasher.finish()
+    }
+
+    pub fn quantize_time(time_sec: f64) -> f64 {
+        // Quantize time to 0.5s intervals for high cache reuse
+        (time_sec.max(0.0) * 2.0).round() / 2.0
+    }
+
+    pub fn build_thumbnail_args(video_path: &str, time_quantized: f64, out_dir: &str) -> Vec<String> {
+        vec![
+            video_path.to_string(),
+            format!("--start={:.2}", time_quantized),
+            "--frames=1".to_string(),
+            "--no-audio".to_string(),
+            "--no-config".to_string(),
+            "--no-osc".to_string(),
+            "--no-osd-bar".to_string(),
+            "--no-input-default-bindings".to_string(),
+            "--terminal=no".to_string(),
+            "--hr-seek=no".to_string(), // Fast keyframe seek for instant preview
+            "--vf=scale=320:-1".to_string(),
+            "--vo=image".to_string(),
+            "--vo-image-format=jpeg".to_string(),
+            "--vo-image-jpeg-quality=80".to_string(),
+            format!("--vo-image-outdir={}", out_dir),
+        ]
     }
 
     pub async fn get_thumbnail(
@@ -41,9 +66,7 @@ impl ThumbnailManager {
         video_path: &str,
         time_sec: f64,
     ) -> Result<String, String> {
-        let clamped_time = if time_sec < 0.0 { 0.0 } else { time_sec };
-        // Quantize time to 0.5s intervals for high cache reuse
-        let time_quantized = (clamped_time * 2.0).round() / 2.0;
+        let time_quantized = Self::quantize_time(time_sec);
         let path_hash = Self::hash_path(video_path);
         let cache_key = format!("{:x}_{:.1}", path_hash, time_quantized);
 
@@ -70,21 +93,8 @@ impl ThumbnailManager {
         let _ = std::fs::create_dir_all(&out_dir);
 
         let mut cmd = tokio::process::Command::new(mpv_path);
-        cmd.arg(video_path)
-            .arg(format!("--start={:.2}", time_quantized))
-            .arg("--frames=1")
-            .arg("--no-audio")
-            .arg("--no-config")
-            .arg("--no-osc")
-            .arg("--no-osd-bar")
-            .arg("--no-input-default-bindings")
-            .arg("--terminal=no")
-            .arg("--hr-seek=no") // Fast keyframe seek for instant preview
-            .arg("--vf=scale=320:-1")
-            .arg("--vo=image")
-            .arg("--vo-image-format=jpeg")
-            .arg("--vo-image-jpeg-quality=80")
-            .arg(format!("--vo-image-outdir={}", out_dir.to_string_lossy()));
+        let args = Self::build_thumbnail_args(video_path, time_quantized, &out_dir.to_string_lossy());
+        cmd.args(args);
 
         #[cfg(windows)]
         {
@@ -109,5 +119,46 @@ impl ThumbnailManager {
 
     pub fn cleanup(&self) {
         let _ = std::fs::remove_dir_all(&self.temp_dir);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_quantize_time() {
+        assert_eq!(ThumbnailManager::quantize_time(0.0), 0.0);
+        assert_eq!(ThumbnailManager::quantize_time(-5.0), 0.0);
+        assert_eq!(ThumbnailManager::quantize_time(1.2), 1.0);
+        assert_eq!(ThumbnailManager::quantize_time(1.3), 1.5);
+        assert_eq!(ThumbnailManager::quantize_time(1.74), 1.5);
+        assert_eq!(ThumbnailManager::quantize_time(1.76), 2.0);
+    }
+
+    #[test]
+    fn test_build_thumbnail_args_invariants() {
+        let video_path = "C:\\Videos\\sample.mp4";
+        let out_dir = "C:\\Temp\\out_thumb";
+        let args = ThumbnailManager::build_thumbnail_args(video_path, 12.5, out_dir);
+
+        // AGENTS.md Section 5.E Invariants
+        assert!(args.contains(&video_path.to_string()));
+        assert!(args.contains(&"--start=12.50".to_string()));
+        assert!(args.contains(&"--frames=1".to_string()));
+        assert!(args.contains(&"--no-audio".to_string()));
+        assert!(args.contains(&"--vf=scale=320:-1".to_string()));
+        assert!(args.contains(&"--vo=image".to_string()));
+        assert!(args.contains(&"--hr-seek=no".to_string()));
+        assert!(args.contains(&format!("--vo-image-outdir={}", out_dir)));
+    }
+
+    #[test]
+    fn test_hash_path_consistency() {
+        let hash1 = ThumbnailManager::hash_path("C:\\Video\\test.mp4");
+        let hash2 = ThumbnailManager::hash_path("C:\\Video\\test.mp4");
+        let hash3 = ThumbnailManager::hash_path("C:\\Video\\other.mp4");
+        assert_eq!(hash1, hash2);
+        assert_ne!(hash1, hash3);
     }
 }

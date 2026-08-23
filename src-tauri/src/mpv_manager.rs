@@ -31,6 +31,31 @@ impl MpvManager {
         }
     }
 
+    pub fn build_mpv_args(hwnd: usize, pipe_name: &str) -> Vec<String> {
+        vec![
+            format!("--wid={}", hwnd),
+            format!("--input-ipc-server={}", pipe_name),
+            "--idle=yes".to_string(),
+            "--force-window=yes".to_string(),
+            "--keep-open=yes".to_string(),
+            "--hr-seek=yes".to_string(),
+            "--hwdec=auto-safe".to_string(),
+            "--vo=gpu-next".to_string(),
+            "--gpu-api=d3d11".to_string(),
+            "--gpu-context=d3d11".to_string(),
+            "--d3d11-exclusive-fs=no".to_string(),
+            "--border=no".to_string(),
+            "--title=".to_string(),
+            "--window-dragging=no".to_string(),
+            "--snap-window=no".to_string(),
+            "--cursor-autohide=no".to_string(),
+            "--input-default-bindings=no".to_string(),
+            "--input-vo-keyboard=no".to_string(),
+            "--osc=no".to_string(),
+            "--osd-level=0".to_string(),
+        ]
+    }
+
     pub fn find_mpv_binary(&self, app_handle: &AppHandle) -> Option<PathBuf> {
         let mut candidates = Vec::new();
 
@@ -87,28 +112,8 @@ impl MpvManager {
         log::info!("Spawning MPV engine using binary: {:?}", mpv_path);
 
         let mut cmd = Command::new(&mpv_path);
-        cmd.args([
-            &format!("--wid={}", hwnd),
-            &format!("--input-ipc-server={}", self.pipe_name),
-            "--idle=yes",
-            "--force-window=yes",
-            "--keep-open=yes",
-            "--hr-seek=yes",
-            "--hwdec=auto-safe",
-            "--vo=gpu-next",
-            "--gpu-api=d3d11",
-            "--gpu-context=d3d11",
-            "--d3d11-exclusive-fs=no",
-            "--border=no",
-            "--title=",
-            "--window-dragging=no",
-            "--snap-window=no",
-            "--cursor-autohide=no",
-            "--input-default-bindings=no",
-            "--input-vo-keyboard=no",
-            "--osc=no",
-            "--osd-level=0",
-        ]);
+        let args = Self::build_mpv_args(hwnd, &self.pipe_name);
+        cmd.args(args);
 
         #[cfg(windows)]
         {
@@ -148,5 +153,35 @@ impl MpvManager {
             }
             tokio::time::sleep(std::time::Duration::from_millis(50)).await;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_build_mpv_args_direct3d_invariants() {
+        let hwnd = 12345678;
+        let pipe = r"\\.\pipe\mpvsocket_test";
+        let args = MpvManager::build_mpv_args(hwnd, pipe);
+
+        // AGENTS.md Section 5.C Invariants
+        assert!(args.contains(&"--wid=12345678".to_string()));
+        assert!(args.contains(&format!("--input-ipc-server={}", pipe)));
+        assert!(args.contains(&"--gpu-api=d3d11".to_string()));
+        assert!(args.contains(&"--gpu-context=d3d11".to_string()));
+        assert!(args.contains(&"--d3d11-exclusive-fs=no".to_string()));
+        assert!(args.contains(&"--force-window=yes".to_string()));
+        assert!(args.contains(&"--border=no".to_string()));
+        assert!(args.contains(&"--cursor-autohide=no".to_string()));
+        assert!(args.contains(&"--window-dragging=no".to_string()));
+        assert!(args.contains(&"--idle=yes".to_string()));
+    }
+
+    #[test]
+    fn test_mpv_manager_default_pipe_name() {
+        let mgr = MpvManager::new();
+        assert!(mgr.pipe_name.starts_with(r"\\.\pipe\mpvsocket_novidplayer_"));
     }
 }

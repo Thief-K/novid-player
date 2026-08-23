@@ -14,6 +14,43 @@ pub struct MpvIpcClient {
 }
 
 impl MpvIpcClient {
+    pub fn build_command_message(command_args: Vec<Value>, req_id: u64) -> Result<String, serde_json::Error> {
+        let msg = serde_json::json!({
+            "command": command_args,
+            "request_id": req_id
+        });
+        serde_json::to_string(&msg)
+    }
+
+    pub fn get_observed_properties() -> Vec<&'static str> {
+        vec![
+            "time-pos",
+            "duration",
+            "percent-pos",
+            "pause",
+            "volume",
+            "mute",
+            "speed",
+            "track-list",
+            "demuxer-cache-state",
+            "demuxer-cache-duration",
+            "hwdec-current",
+            "sub-delay",
+            "audio-delay",
+            "brightness",
+            "contrast",
+            "saturation",
+            "gamma",
+            "video-params",
+            "eof-reached",
+            "chapter-list",
+            "chapter",
+            "path",
+            "media-title",
+            "core-idle",
+        ]
+    }
+
     pub async fn connect(
         pipe_name: String,
         app_handle: AppHandle,
@@ -103,11 +140,7 @@ impl MpvIpcClient {
         command_args: Vec<Value>,
     ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         let req_id = REQUEST_COUNTER.fetch_add(1, Ordering::SeqCst);
-        let msg = serde_json::json!({
-            "command": command_args,
-            "request_id": req_id
-        });
-        let raw = serde_json::to_string(&msg)?;
+        let raw = Self::build_command_message(command_args, req_id)?;
         self.tx
             .send(raw)
             .await
@@ -116,32 +149,7 @@ impl MpvIpcClient {
     }
 
     async fn setup_observers(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let properties = vec![
-            "time-pos",
-            "duration",
-            "percent-pos",
-            "pause",
-            "volume",
-            "mute",
-            "speed",
-            "track-list",
-            "demuxer-cache-state",
-            "demuxer-cache-duration",
-            "hwdec-current",
-            "sub-delay",
-            "audio-delay",
-            "brightness",
-            "contrast",
-            "saturation",
-            "gamma",
-            "video-params",
-            "eof-reached",
-            "chapter-list",
-            "chapter",
-            "path",
-            "media-title",
-            "core-idle",
-        ];
+        let properties = Self::get_observed_properties();
 
         for (idx, prop) in properties.iter().enumerate() {
             self.send_command(vec![
@@ -153,5 +161,48 @@ impl MpvIpcClient {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_build_command_message() {
+        let cmd = vec![
+            Value::String("set_property".to_string()),
+            Value::String("volume".to_string()),
+            Value::Number(85.into()),
+        ];
+        let json_str = MpvIpcClient::build_command_message(cmd, 42).expect("serialization failed");
+        let parsed: Value = serde_json::from_str(&json_str).expect("deserialization failed");
+
+        assert_eq!(parsed["request_id"], 42);
+        assert_eq!(parsed["command"][0], "set_property");
+        assert_eq!(parsed["command"][1], "volume");
+        assert_eq!(parsed["command"][2], 85);
+    }
+
+    #[test]
+    fn test_observed_properties_coverage() {
+        let props = MpvIpcClient::get_observed_properties();
+        assert!(props.contains(&"time-pos"));
+        assert!(props.contains(&"duration"));
+        assert!(props.contains(&"pause"));
+        assert!(props.contains(&"volume"));
+        assert!(props.contains(&"mute"));
+        assert!(props.contains(&"speed"));
+        assert!(props.contains(&"hwdec-current"));
+        assert!(props.contains(&"eof-reached"));
+        assert!(props.contains(&"video-params"));
+        assert_eq!(props.len(), 24);
+    }
+
+    #[test]
+    fn test_request_counter_increment() {
+        let val1 = REQUEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+        let val2 = REQUEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+        assert_eq!(val2, val1 + 1);
     }
 }

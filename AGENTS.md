@@ -117,17 +117,22 @@ novid-player/
 
 ### Development & Build Scripts
 
-| Command             | Purpose                                                  |
-| :------------------ | :------------------------------------------------------- |
-| `pnpm setup-mpv`    | Download and place `mpv.exe` into `src-tauri/binaries/`  |
-| `pnpm dev`          | Run Vite frontend development server                     |
-| `pnpm tauri dev`    | Launch full desktop application in development mode      |
-| `pnpm build`        | Type-check (`tsc`) and bundle frontend with Vite         |
-| `pnpm lint`         | Run linter via `oxlint`                                  |
-| `pnpm lint:fix`     | Automatically fix linting issues with `oxlint --fix`     |
-| `pnpm format`       | Auto-format codebase using `oxfmt`                       |
-| `pnpm format:check` | Check code formatting compliance with `oxfmt --check`    |
-| `pnpm tauri build`  | Build production Windows installer/bundle (`nsis`/`msi`) |
+| Command              | Purpose                                                  |
+| :------------------- | :------------------------------------------------------- |
+| `pnpm setup-mpv`     | Download and place `mpv.exe` into `src-tauri/binaries/`  |
+| `pnpm dev`           | Run Vite frontend development server                     |
+| `pnpm tauri dev`     | Launch full desktop application in development mode      |
+| `pnpm build`         | Type-check (`tsc`) and bundle frontend with Vite         |
+| `pnpm lint`          | Run linter via `oxlint`                                  |
+| `pnpm lint:fix`      | Automatically fix linting issues with `oxlint --fix`     |
+| `pnpm format`        | Auto-format codebase using `oxfmt`                       |
+| `pnpm format:check`  | Check code formatting compliance with `oxfmt --check`    |
+| `pnpm test`          | Run frontend Vitest unit & component tests               |
+| `pnpm test:watch`    | Run Vitest in interactive watch mode                     |
+| `pnpm test:coverage` | Generate frontend code coverage report (v8)              |
+| `pnpm test:backend`  | Run backend Rust unit & IPC tests (`cargo test`)         |
+| `pnpm test:all`      | Run full-stack automated tests (Frontend + Backend)      |
+| `pnpm tauri build`   | Build production Windows installer/bundle (`nsis`/`msi`) |
 
 ### Rust Backend Verification
 
